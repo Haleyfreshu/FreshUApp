@@ -9,15 +9,9 @@ import { MacroBar } from "@/components/MacroBar";
 import { MealCard } from "@/components/MealCard";
 import { FRESHU_LOGO } from "@/components/Shell";
 import { BUDDY_STATES, fuelState, computeFuelScore } from "@/lib/fuel";
-import { addMinutes, minutesOfDay, fmtTime } from "@/lib/format";
+import { addMinutes, minutesOfDay, timeStrFromMinutes, fmtTime } from "@/lib/format";
+import { computeMealMinutes, DEFAULT_MEAL_MINUTES } from "@/lib/schedule";
 import { createClient } from "@/lib/supabase/client";
-
-const MEAL_ANCHORS = [
-  { label: "Breakfast", time: "07:00" },
-  { label: "Lunch", time: "12:00" },
-  { label: "Dinner", time: "19:00" },
-  { label: "Evening Snack", time: "21:00" },
-];
 
 export function DashboardView({ profile, todayLog, suggested, todayEvents }) {
   const router = useRouter();
@@ -31,17 +25,38 @@ export function DashboardView({ profile, todayLog, suggested, todayEvents }) {
   const score = useMemo(() => computeFuelScore(totals, profile), [totals, profile]);
   const state = BUDDY_STATES[fuelState(score)];
 
+  const mealMinutes = useMemo(() => computeMealMinutes(todayEvents), [todayEvents]);
+  const scheduleAdjusted = useMemo(
+    () => Object.keys(mealMinutes).some(k => mealMinutes[k] !== DEFAULT_MEAL_MINUTES[k]),
+    [mealMinutes]
+  );
+
   const schedule = useMemo(() => {
-    const entries = MEAL_ANCHORS.map(a => ({ slot: a.label, minutes: minutesOfDay(a.time), time: fmtTime(a.time) }));
+    const mealTimes = Object.values(mealMinutes);
+    // A meal already covers a pre/post training window if it lands within
+    // 20 minutes of it — showing both would just be the same eating
+    // occasion listed twice (e.g. an early lift can push Breakfast right
+    // up against its own pre-fuel snack).
+    const coveredByMeal = (minutes) => mealTimes.some(m => Math.abs(m - minutes) <= 20);
+
+    const entries = Object.entries(mealMinutes).map(([label, minutes]) => (
+      { slot: label, minutes, time: fmtTime(timeStrFromMinutes(minutes)) }
+    ));
     todayEvents.forEach(ev => {
       entries.push({ slot: ev.label, minutes: minutesOfDay(ev.event_time), time: fmtTime(ev.event_time) });
       const pre = addMinutes(ev.event_time, -60);
+      const preMinutes = minutesOfDay(pre);
+      if (!coveredByMeal(preMinutes)) {
+        entries.push({ slot: `Pre-${ev.label} Fuel`, minutes: preMinutes, time: fmtTime(pre) });
+      }
       const post = addMinutes(ev.event_time, 45);
-      entries.push({ slot: `Pre-${ev.label} Fuel`, minutes: minutesOfDay(pre), time: fmtTime(pre) });
-      entries.push({ slot: `Post-${ev.label} Recovery`, minutes: minutesOfDay(post), time: fmtTime(post) });
+      const postMinutes = minutesOfDay(post);
+      if (!coveredByMeal(postMinutes)) {
+        entries.push({ slot: `Post-${ev.label} Recovery`, minutes: postMinutes, time: fmtTime(post) });
+      }
     });
     return entries.sort((a, b) => a.minutes - b.minutes);
-  }, [todayEvents]);
+  }, [mealMinutes, todayEvents]);
 
   const eatenMealIds = new Set(todayLog.map(l => l.meal_id));
 
@@ -100,8 +115,11 @@ export function DashboardView({ profile, todayLog, suggested, todayEvents }) {
       </div>
 
       <div style={{ marginTop: 20 }}>
-        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 15, color: "#0B0E1A", marginBottom: 10 }}>Your Fueling Schedule</div>
-        <div style={{ background: "#fff", borderRadius: 20, padding: "6px 4px", boxShadow: "0 4px 20px rgba(15,20,50,0.06)" }}>
+        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 15, color: "#0B0E1A" }}>Your Fueling Schedule</div>
+        {scheduleAdjusted && (
+          <div style={{ fontSize: 11.5, color: "#9AA0BF", marginTop: 2, marginBottom: 8 }}>Auto-adjusted around today&apos;s training</div>
+        )}
+        <div style={{ background: "#fff", borderRadius: 20, padding: "6px 4px", boxShadow: "0 4px 20px rgba(15,20,50,0.06)", marginTop: scheduleAdjusted ? 0 : 10 }}>
           {schedule.map((s, i) => (
             <div key={`${s.slot}-${s.minutes}`} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderBottom: i < schedule.length - 1 ? "1px solid #F3F5FB" : "none" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

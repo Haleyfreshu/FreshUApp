@@ -49,16 +49,16 @@ export function StaffLoginForm() {
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 26px" }}>
       <Logo height={30} />
-      <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 22, color: "#0B0E1A", marginTop: 22, marginBottom: 4 }}>Staff access</div>
-      <div style={{ fontSize: 13, color: "#6B7290", marginBottom: 18 }}>Log in with your staff account to manage meals and orders.</div>
+      <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 22, color: "var(--fu-text)", marginTop: 22, marginBottom: 4 }}>Staff access</div>
+      <div style={{ fontSize: 13, color: "var(--fu-text-secondary)", marginBottom: 18 }}>Log in with your staff account to manage meals and orders.</div>
       <AuthField label="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="staff@example.com" />
       <AuthField label="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
       {error && <div style={{ color: "#FF5A5F", fontSize: 12.5, marginTop: -6, marginBottom: 12, fontWeight: 600 }}>{error}</div>}
       <button onClick={handleLogin} disabled={loading}
-        style={{ padding: 15, borderRadius: 14, border: "none", background: "#0B0E1A", color: "#fff", fontWeight: 800, fontSize: 15, cursor: loading ? "default" : "pointer", opacity: loading ? 0.7 : 1 }}>
+        style={{ padding: 15, borderRadius: 14, border: "none", background: "var(--fu-cta-bg)", color: "var(--fu-cta-text)", fontWeight: 800, fontSize: 15, cursor: loading ? "default" : "pointer", opacity: loading ? 0.7 : 1 }}>
         {loading ? "Checking…" : "Enter"}
       </button>
-      <a href="/login" style={{ marginTop: 14, background: "none", border: "none", color: "#9AA0BF", fontSize: 12.5, cursor: "pointer", textDecoration: "none", textAlign: "center" }}>← Back to athlete login</a>
+      <a href="/login" style={{ marginTop: 14, background: "none", border: "none", color: "var(--fu-text-muted)", fontSize: 12.5, cursor: "pointer", textDecoration: "none", textAlign: "center" }}>← Back to athlete login</a>
     </div>
   );
 }

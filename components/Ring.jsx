@@ -1,6 +1,6 @@
 "use client";
 
-export function Ring({ size = 200, stroke = 16, progress = 0, gradientId, colors, trackColor = "#E7EBF7", children }) {
+export function Ring({ size = 200, stroke = 16, progress = 0, gradientId, colors, trackColor = "#262B4A", children }) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const clamped = Math.max(0, Math.min(100, progress));

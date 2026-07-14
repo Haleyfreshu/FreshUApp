@@ -15,9 +15,9 @@ export function BottomNav({ cartCount = 0 }) {
   const router = useRouter();
   return (
     <div style={{
-      position: "sticky", bottom: 0, left: 0, right: 0, background: "#fff",
-      borderTop: "1px solid #EEF0F8", display: "flex", padding: "8px 6px calc(env(safe-area-inset-bottom,0px) + 8px)",
-      boxShadow: "0 -4px 20px rgba(15,20,50,0.05)", zIndex: 20
+      position: "sticky", bottom: 0, left: 0, right: 0, background: "var(--fu-card)",
+      borderTop: "1px solid var(--fu-border)", display: "flex", padding: "8px 6px calc(env(safe-area-inset-bottom,0px) + 8px)",
+      boxShadow: "0 -4px 20px rgba(0,0,0,0.35)", zIndex: 20
     }}>
       {NAV_ITEMS.map(it => {
         const Icon = it.icon;
@@ -28,7 +28,7 @@ export function BottomNav({ cartCount = 0 }) {
             background: "none", border: "none", padding: "6px 0", position: "relative", cursor: "pointer"
           }}>
             <div style={{ position: "relative" }}>
-              <Icon size={22} color={isActive ? "#2A3EFF" : "#9AA0BF"} strokeWidth={isActive ? 2.4 : 2} />
+              <Icon size={22} color={isActive ? "#2A3EFF" : "var(--fu-text-muted)"} strokeWidth={isActive ? 2.4 : 2} />
               {it.key === "menu" && cartCount > 0 && (
                 <span style={{
                   position: "absolute", top: -6, right: -8, background: "#33D3A3", color: "#fff",
@@ -37,7 +37,7 @@ export function BottomNav({ cartCount = 0 }) {
                 }}>{cartCount}</span>
               )}
             </div>
-            <span style={{ fontSize: 10.5, fontWeight: isActive ? 800 : 600, color: isActive ? "#2A3EFF" : "#9AA0BF" }}>{it.label}</span>
+            <span style={{ fontSize: 10.5, fontWeight: isActive ? 800 : 600, color: isActive ? "#2A3EFF" : "var(--fu-text-muted)" }}>{it.label}</span>
           </button>
         );
       })}

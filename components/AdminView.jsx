@@ -50,8 +50,8 @@ export function AdminView({ initialMeals, athletes, orders }) {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F3F5FB" }}>
-      <div style={{ background: "#0B0E1A", padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <div style={{ minHeight: "100vh", background: "var(--fu-bg)" }}>
+      <div style={{ background: "var(--fu-card)", padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={FRESHU_LOGO} alt="FreshU" style={{ height: 26, width: "auto", display: "block" }} />
@@ -73,7 +73,7 @@ export function AdminView({ initialMeals, athletes, orders }) {
           return (
             <button key={t.key} onClick={() => setTab(t.key)} style={{
               display: "flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 12, border: "none",
-              background: tab === t.key ? "#0B0E1A" : "#fff", color: tab === t.key ? "#fff" : "#0B0E1A",
+              background: tab === t.key ? "var(--fu-cta-bg)" : "var(--fu-card)", color: tab === t.key ? "var(--fu-cta-text)" : "var(--fu-text)",
               fontWeight: 700, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap"
             }}><Icon size={15} /> {t.label}</button>
           );
@@ -84,14 +84,14 @@ export function AdminView({ initialMeals, athletes, orders }) {
         {tab === "meals" && (
           <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <div style={{ fontSize: 13, color: "#6B7290" }}>{meals.length} meals on this week&apos;s menu</div>
+              <div style={{ fontSize: 13, color: "var(--fu-text-secondary)" }}>{meals.length} meals on this week&apos;s menu</div>
               <button onClick={() => setEditing("new")} style={{ display: "flex", alignItems: "center", gap: 6, background: "#2A3EFF", border: "none", borderRadius: 12, padding: "9px 14px", color: "#fff", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>
                 <Upload size={14} /> Add meal
               </button>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 12 }}>
               {meals.map(m => (
-                <div key={m.id} style={{ background: "#fff", borderRadius: 18, padding: 14, boxShadow: "0 2px 12px rgba(15,20,50,0.06)" }}>
+                <div key={m.id} style={{ background: "var(--fu-card)", borderRadius: 18, padding: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}>
                   <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                     <div style={{ width: 44, height: 44, borderRadius: 12, background: `${m.color}1a`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, overflow: "hidden" }}>
                       {m.photo_url ? (
@@ -100,18 +100,18 @@ export function AdminView({ initialMeals, athletes, orders }) {
                       ) : m.emoji}
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, fontSize: 13.5 }}>{m.name}</div>
-                      <div style={{ fontSize: 11, color: "#9AA0BF" }}>{m.category} · ${Number(m.price).toFixed(2)}</div>
+                      <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--fu-text)" }}>{m.name}</div>
+                      <div style={{ fontSize: 11, color: "var(--fu-text-muted)" }}>{m.category} · ${Number(m.price).toFixed(2)}</div>
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
                     <Tag label={`${m.calories} cal`} /><Tag label={`${m.protein}g P`} /><Tag label={`${m.carbs}g C`} /><Tag label={`${m.fat}g F`} />
                   </div>
                   <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                    <button onClick={() => setEditing(m)} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px", borderRadius: 10, border: "1.5px solid #E7EBF7", background: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
+                    <button onClick={() => setEditing(m)} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px", borderRadius: 10, border: "1.5px solid var(--fu-border)", background: "var(--fu-card-alt)", color: "var(--fu-text)", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
                       <Pencil size={13} /> Edit
                     </button>
-                    <button onClick={() => deleteMeal(m.id)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px 10px", borderRadius: 10, border: "1.5px solid #FFE0E0", background: "#fff", color: "#FF5A5F", cursor: "pointer" }}>
+                    <button onClick={() => deleteMeal(m.id)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px 10px", borderRadius: 10, border: "1.5px solid rgba(255,90,95,0.35)", background: "var(--fu-card-alt)", color: "#FF5A5F", cursor: "pointer" }}>
                       <Trash2 size={13} />
                     </button>
                   </div>
@@ -124,13 +124,13 @@ export function AdminView({ initialMeals, athletes, orders }) {
         {tab === "athletes" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {athletes.map(a => (
-              <div key={a.id} style={{ background: "#fff", borderRadius: 16, padding: 14, boxShadow: "0 2px 12px rgba(15,20,50,0.06)", display: "flex", alignItems: "center", gap: 12 }}>
+              <div key={a.id} style={{ background: "var(--fu-card)", borderRadius: 16, padding: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.3)", display: "flex", alignItems: "center", gap: 12 }}>
                 <div style={{ width: 42, height: 42, borderRadius: "50%", background: "linear-gradient(135deg,#2A3EFF,#33D3A3)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800 }}>{(a.name || "A")[0]}</div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 13.5 }}>{a.name}</div>
-                  <div style={{ fontSize: 11.5, color: "#9AA0BF" }}>{a.school || "—"} · {a.sport || "—"}</div>
+                  <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--fu-text)" }}>{a.name}</div>
+                  <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)" }}>{a.school || "—"} · {a.sport || "—"}</div>
                 </div>
-                <div style={{ fontSize: 11.5, color: "#6B7290" }}>{a.email}</div>
+                <div style={{ fontSize: 11.5, color: "var(--fu-text-secondary)" }}>{a.email}</div>
               </div>
             ))}
           </div>
@@ -139,20 +139,20 @@ export function AdminView({ initialMeals, athletes, orders }) {
         {tab === "orders" && (
           <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <div style={{ fontSize: 13, color: "#6B7290" }}>{orders.length} total orders</div>
-              <button onClick={exportCSV} style={{ display: "flex", alignItems: "center", gap: 6, background: "#0B0E1A", border: "none", borderRadius: 12, padding: "9px 14px", color: "#fff", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>
+              <div style={{ fontSize: 13, color: "var(--fu-text-secondary)" }}>{orders.length} total orders</div>
+              <button onClick={exportCSV} style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--fu-cta-bg)", border: "none", borderRadius: 12, padding: "9px 14px", color: "var(--fu-cta-text)", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>
                 <Download size={14} /> Export for Well Fed
               </button>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {orders.map(o => (
-                <div key={o.id} style={{ background: "#fff", borderRadius: 16, padding: 14, boxShadow: "0 2px 12px rgba(15,20,50,0.06)" }}>
+                <div key={o.id} style={{ background: "var(--fu-card)", borderRadius: 16, padding: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <div style={{ fontWeight: 700, fontSize: 13.5 }}>{o.athlete_name || "Athlete"} · Week of {o.week_of}</div>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#6B7290" }}>{o.status}</span>
+                    <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--fu-text)" }}>{o.athlete_name || "Athlete"} · Week of {o.week_of}</div>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "var(--fu-text-secondary)" }}>{o.status}</span>
                   </div>
-                  <div style={{ fontSize: 11.5, color: "#9AA0BF", marginTop: 4 }}>{o.items.map(i => i.name).join(", ")}</div>
-                  <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 6 }}>${Number(o.total).toFixed(2)}</div>
+                  <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)", marginTop: 4 }}>{o.items.map(i => i.name).join(", ")}</div>
+                  <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 6, color: "var(--fu-text)" }}>${Number(o.total).toFixed(2)}</div>
                 </div>
               ))}
             </div>

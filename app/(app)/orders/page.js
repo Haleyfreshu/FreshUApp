@@ -18,16 +18,16 @@ export default async function OrdersPage() {
 
   return (
     <div style={{ padding: "18px 20px 20px" }}>
-      <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 22, color: "#0B0E1A" }}>Orders</div>
+      <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 22, color: "var(--fu-text)" }}>Orders</div>
 
       <div style={{ marginTop: 16 }}>
-        <div style={{ fontWeight: 800, fontSize: 13, color: "#4C5378", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>Current</div>
+        <div style={{ fontWeight: 800, fontSize: 13, color: "var(--fu-label)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>Current</div>
         {current.length === 0 && <EmptyState text="No active order. Head to the menu to fuel up this week." />}
         {current.map(o => <OrderCard key={o.id} order={o} />)}
       </div>
 
       <div style={{ marginTop: 22 }}>
-        <div style={{ fontWeight: 800, fontSize: 13, color: "#4C5378", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>Previous</div>
+        <div style={{ fontWeight: 800, fontSize: 13, color: "var(--fu-label)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>Previous</div>
         {past.length === 0 && <EmptyState text="Past orders will show up here." />}
         {past.map(o => <OrderCard key={o.id} order={o} />)}
       </div>

@@ -39,12 +39,12 @@ export function LogFoodModal({ onClose, onSaved }) {
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(11,14,26,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 80, padding: 16 }}>
-      <div style={{ background: "#fff", borderRadius: 20, padding: 20, width: "100%", maxWidth: 420, maxHeight: "88vh", overflowY: "auto" }}>
+      <div style={{ background: "var(--fu-card)", borderRadius: 20, padding: 20, width: "100%", maxWidth: 420, maxHeight: "88vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
           <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 17 }}>Log a food</div>
-          <button onClick={onClose} style={{ background: "#F3F5FB", border: "none", borderRadius: 10, padding: 6, cursor: "pointer" }}><X size={16} /></button>
+          <button onClick={onClose} style={{ background: "var(--fu-card-alt)", border: "none", borderRadius: 10, padding: 6, cursor: "pointer", color: "var(--fu-text)" }}><X size={16} /></button>
         </div>
-        <div style={{ fontSize: 12.5, color: "#6B7290", marginBottom: 14 }}>
+        <div style={{ fontSize: 12.5, color: "var(--fu-text-secondary)", marginBottom: 14 }}>
           Anything you ate that wasn&apos;t one of this week&apos;s meals — enter your best estimate of the macros.
         </div>
         <SmallField label="Food" value={form.name} onChange={e => set("name", e.target.value)} placeholder="e.g. Protein shake" />
@@ -57,7 +57,7 @@ export function LogFoodModal({ onClose, onSaved }) {
         {error && <div style={{ color: "#FF5A5F", fontSize: 12.5, marginTop: 4, fontWeight: 600 }}>{error}</div>}
         <button onClick={save} disabled={!canSave || saving} style={{
           width: "100%", marginTop: 10, padding: 14, borderRadius: 14, border: "none",
-          background: canSave ? "#0B0E1A" : "#E7EBF7", color: canSave ? "#fff" : "#9AA0BF",
+          background: canSave ? "var(--fu-cta-bg)" : "var(--fu-card-alt)", color: canSave ? "var(--fu-cta-text)" : "var(--fu-text-muted)",
           fontWeight: 800, cursor: canSave && !saving ? "pointer" : "default", opacity: saving ? 0.7 : 1
         }}>
           {saving ? "Saving…" : "Add to today's log"}

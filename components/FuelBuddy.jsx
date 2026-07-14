@@ -23,7 +23,7 @@ export function FuelBuddy({ score, size = 96 }) {
         </svg>
       </div>
       <div style={{ textAlign: "center" }}>
-        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 15, color: "#0B0E1A" }}>{s.label}</div>
+        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 15, color: "var(--fu-text)" }}>{s.label}</div>
       </div>
     </div>
   );

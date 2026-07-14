@@ -66,14 +66,14 @@ export function MealEditor({ meal, onCancel, onSaved }) {
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(11,14,26,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 80, padding: 16 }}>
-      <div style={{ background: "#fff", borderRadius: 20, padding: 20, width: "100%", maxWidth: 420, maxHeight: "88vh", overflowY: "auto" }}>
+      <div style={{ background: "var(--fu-card)", borderRadius: 20, padding: 20, width: "100%", maxWidth: 420, maxHeight: "88vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
           <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 17 }}>{meal ? "Edit meal" : "Add meal"}</div>
-          <button onClick={onCancel} style={{ background: "#F3F5FB", border: "none", borderRadius: 10, padding: 6, cursor: "pointer" }}><X size={16} /></button>
+          <button onClick={onCancel} style={{ background: "var(--fu-card-alt)", border: "none", borderRadius: 10, padding: 6, cursor: "pointer", color: "var(--fu-text)" }}><X size={16} /></button>
         </div>
 
         <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#9AA0BF", marginBottom: 6 }}>Meal photo</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--fu-text-muted)", marginBottom: 6 }}>Meal photo</div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ width: 56, height: 56, borderRadius: 14, background: `${form.color}1a`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, overflow: "hidden", flexShrink: 0 }}>
               {preview ? (
@@ -101,7 +101,7 @@ export function MealEditor({ meal, onCancel, onSaved }) {
           <SmallField label="Fat (g)" type="number" value={form.fat} onChange={v => set("fat", v.target.value)} />
         </div>
         {error && <div style={{ color: "#FF5A5F", fontSize: 12.5, marginTop: 4, fontWeight: 600 }}>{error}</div>}
-        <button onClick={save} disabled={saving} style={{ width: "100%", marginTop: 10, padding: 14, borderRadius: 14, border: "none", background: "#0B0E1A", color: "#fff", fontWeight: 800, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}>
+        <button onClick={save} disabled={saving} style={{ width: "100%", marginTop: 10, padding: 14, borderRadius: 14, border: "none", background: "var(--fu-cta-bg)", color: "var(--fu-cta-text)", fontWeight: 800, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}>
           {saving ? "Saving…" : "Save meal"}
         </button>
       </div>

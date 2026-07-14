@@ -1,5 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
 
+:root {
+  --fu-bg: #000000;
+  --fu-card: #14172C;
+  --fu-card-alt: #1E2340;
+  --fu-text: #F4F5FA;
+  --fu-text-secondary: #A6ACC9;
+  --fu-text-muted: #6E7390;
+  --fu-label: #B7BEE0;
+  --fu-border: #262B4A;
+  --fu-danger-bg: #2C1620;
+  --fu-cta-bg: #F4F5FA;
+  --fu-cta-text: #0B0E1A;
+}
+
 * {
   font-family: 'Inter', -apple-system, sans-serif;
   box-sizing: border-box;
@@ -8,6 +22,12 @@
 html, body {
   margin: 0;
   padding: 0;
+  background: var(--fu-bg);
+  color: var(--fu-text);
+}
+
+input, select, textarea {
+  color-scheme: dark;
 }
 
 ::-webkit-scrollbar {

@@ -8,16 +8,16 @@ export function MacroBar({ icon: Icon, label, current, goal, unit, color }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <Icon size={15} color={color} />
-          <span style={{ fontSize: 13, fontWeight: 600, color: "#0B0E1A" }}>{label}</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--fu-text)" }}>{label}</span>
         </div>
-        <span style={{ fontSize: 12, color: "#6B7290" }}>
+        <span style={{ fontSize: 12, color: "var(--fu-text-secondary)" }}>
           {Math.round(current)}{unit} / {goal}{unit}
         </span>
       </div>
-      <div style={{ height: 8, borderRadius: 8, background: "#E7EBF7", overflow: "hidden" }}>
+      <div style={{ height: 8, borderRadius: 8, background: "var(--fu-border)", overflow: "hidden" }}>
         <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: 8, transition: "width .7s cubic-bezier(.4,0,.2,1)" }} />
       </div>
-      <div style={{ fontSize: 11, color: "#9AA0BF", marginTop: 4 }}>
+      <div style={{ fontSize: 11, color: "var(--fu-text-muted)", marginTop: 4 }}>
         {remaining > 0 ? `${remaining}${unit} to go` : "Goal reached 🎉"}
       </div>
     </div>

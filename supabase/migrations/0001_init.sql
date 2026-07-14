@@ -29,10 +29,23 @@ create table public.profiles (
 
 alter table public.profiles enable row level security;
 
+-- Checks the staff role via SECURITY DEFINER so it bypasses RLS instead of
+-- re-triggering the policy it's used in (a plain subquery here would cause
+-- "infinite recursion detected in policy for relation profiles").
+create function public.is_staff(user_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (select 1 from public.profiles where id = user_id and role = 'staff');
+$$;
+
 create policy "profiles: select own or staff" on public.profiles
   for select using (
     id = auth.uid()
-    or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'staff')
+    or public.is_staff(auth.uid())
   );
 
 create policy "profiles: insert own" on public.profiles
@@ -41,7 +54,7 @@ create policy "profiles: insert own" on public.profiles
 create policy "profiles: update own or staff" on public.profiles
   for update using (
     id = auth.uid()
-    or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'staff')
+    or public.is_staff(auth.uid())
   );
 
 -- Auto-create a profile row the moment someone signs up, so the app never
@@ -86,9 +99,9 @@ create policy "meals: readable by any signed-in user" on public.meals
 
 create policy "meals: staff write" on public.meals
   for all using (
-    exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'staff')
+    public.is_staff(auth.uid())
   ) with check (
-    exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'staff')
+    public.is_staff(auth.uid())
   );
 
 -- ---------------------------------------------------------------------------
@@ -131,7 +144,7 @@ alter table public.order_items enable row level security;
 create policy "orders: athlete sees own, staff sees all" on public.orders
   for select using (
     athlete_id = auth.uid()
-    or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'staff')
+    or public.is_staff(auth.uid())
   );
 
 create policy "orders: athlete inserts own" on public.orders
@@ -139,7 +152,7 @@ create policy "orders: athlete inserts own" on public.orders
 
 create policy "orders: staff can update" on public.orders
   for update using (
-    exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'staff')
+    public.is_staff(auth.uid())
   );
 
 create policy "order_items: visible if parent order visible" on public.order_items
@@ -148,7 +161,7 @@ create policy "order_items: visible if parent order visible" on public.order_ite
       select 1 from public.orders o
       where o.id = order_items.order_id
         and (o.athlete_id = auth.uid()
-             or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'staff'))
+             or public.is_staff(auth.uid()))
     )
   );
 
@@ -195,17 +208,17 @@ create policy "meal-photos: public read" on storage.objects
 create policy "meal-photos: staff write" on storage.objects
   for insert with check (
     bucket_id = 'meal-photos'
-    and exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'staff')
+    and public.is_staff(auth.uid())
   );
 
 create policy "meal-photos: staff update" on storage.objects
   for update using (
     bucket_id = 'meal-photos'
-    and exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'staff')
+    and public.is_staff(auth.uid())
   );
 
 create policy "meal-photos: staff delete" on storage.objects
   for delete using (
     bucket_id = 'meal-photos'
-    and exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'staff')
+    and public.is_staff(auth.uid())
   );

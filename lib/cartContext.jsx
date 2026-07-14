@@ -26,10 +26,10 @@ export function CartProvider({ userId, children }) {
     window.localStorage.setItem(storageKey, JSON.stringify(cart));
   }, [cart, hydrated, storageKey]);
 
-  const addToCart = (meal) => {
+  const addToCart = (meal, selectedOptions = []) => {
     setCart((c) => {
       if (c.length >= CART_MAX || c.some((m) => m.id === meal.id)) return c;
-      return [...c, meal];
+      return [...c, { ...meal, selectedOptions }];
     });
   };
   const removeFromCart = (id) => setCart((c) => c.filter((m) => m.id !== id));

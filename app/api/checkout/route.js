@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
 import { weekOfLabel } from "@/lib/format";
 import { CART_MAX } from "@/lib/constants";
+import { applyOptionsToMeal, optionsLabel } from "@/lib/mealOptions";
 
 export async function POST(request) {
   const supabase = createClient();
@@ -11,10 +12,12 @@ export async function POST(request) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
-  const { mealIds } = await request.json();
-  if (!Array.isArray(mealIds) || mealIds.length === 0 || mealIds.length > CART_MAX) {
+  const { items } = await request.json();
+  if (!Array.isArray(items) || items.length === 0 || items.length > CART_MAX) {
     return NextResponse.json({ error: `Choose 1-${CART_MAX} meals.` }, { status: 400 });
   }
+
+  const mealIds = items.map((it) => it.mealId);
 
   // Re-fetch prices/details from the DB rather than trusting the client cart payload.
   const { data: meals, error: mealsError } = await supabase
@@ -25,10 +28,36 @@ export async function POST(request) {
   if (mealsError || !meals || meals.length !== mealIds.length) {
     return NextResponse.json({ error: "One or more meals could not be found." }, { status: 400 });
   }
+  const mealById = Object.fromEntries(meals.map((m) => [m.id, m]));
+
+  const allOptionIds = [...new Set(items.flatMap((it) => it.optionIds || []))];
+  let optionById = {};
+  if (allOptionIds.length > 0) {
+    const { data: options, error: optionsError } = await supabase
+      .from("meal_options")
+      .select("*, meal_option_groups(meal_id)")
+      .in("id", allOptionIds);
+    if (optionsError || !options || options.length !== allOptionIds.length) {
+      return NextResponse.json({ error: "One or more selected options could not be found." }, { status: 400 });
+    }
+    optionById = Object.fromEntries(options.map((o) => [o.id, o]));
+  }
+
+  // Build each line with server-validated options — every option must
+  // actually belong to the meal it was selected for.
+  const lines = [];
+  for (const it of items) {
+    const meal = mealById[it.mealId];
+    const selectedOptions = (it.optionIds || []).map((id) => optionById[id]);
+    if (selectedOptions.some((o) => !o || o.meal_option_groups.meal_id !== meal.id)) {
+      return NextResponse.json({ error: "One or more options don't match their meal." }, { status: 400 });
+    }
+    lines.push({ meal, selectedOptions, totals: applyOptionsToMeal(meal, selectedOptions) });
+  }
 
   const { data: profile } = await supabase.from("profiles").select("name, email").eq("id", user.id).single();
 
-  const total = meals.reduce((sum, m) => sum + Number(m.price), 0);
+  const total = lines.reduce((sum, l) => sum + l.totals.price, 0);
   const weekOf = weekOfLabel();
 
   const { data: order, error: orderError } = await supabase.from("orders").insert({
@@ -44,9 +73,10 @@ export async function POST(request) {
     return NextResponse.json({ error: orderError.message }, { status: 500 });
   }
 
-  const orderItems = meals.map((m) => ({
-    order_id: order.id, meal_id: m.id, name: m.name, emoji: m.emoji, category: m.category,
-    calories: m.calories, protein: m.protein, carbs: m.carbs, fat: m.fat, price: m.price,
+  const orderItems = lines.map(({ meal, selectedOptions, totals }) => ({
+    order_id: order.id, meal_id: meal.id, name: meal.name, emoji: meal.emoji, category: meal.category,
+    calories: totals.calories, protein: totals.protein, carbs: totals.carbs, fat: totals.fat, price: totals.price,
+    selected_options: selectedOptions.map((o) => ({ id: o.id, label: o.label })),
   }));
   const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
   if (itemsError) {
@@ -59,11 +89,14 @@ export async function POST(request) {
     mode: "payment",
     payment_method_types: ["card"],
     customer_email: profile?.email,
-    line_items: meals.map((m) => ({
+    line_items: lines.map(({ meal, selectedOptions, totals }) => ({
       price_data: {
         currency: "usd",
-        product_data: { name: m.name, description: m.category },
-        unit_amount: Math.round(Number(m.price) * 100),
+        product_data: {
+          name: meal.name,
+          description: selectedOptions.length ? `${meal.category} — ${optionsLabel(selectedOptions)}` : meal.category,
+        },
+        unit_amount: Math.round(totals.price * 100),
       },
       quantity: 1,
     })),

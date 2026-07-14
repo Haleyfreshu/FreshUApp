@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { SmallField } from "@/components/Fields";
+import { MealOptionsEditor } from "@/components/MealOptionsEditor";
 import { createClient } from "@/lib/supabase/client";
 import { STAFF_STORAGE_BUCKET } from "@/lib/constants";
 
@@ -11,6 +12,8 @@ export function MealEditor({ meal, onCancel, onSaved }) {
     name: "", category: "Lunch", emoji: "🍽️", color: "#2A3EFF",
     ingredients: "", calories: 500, protein: 30, carbs: 40, fat: 15, price: 10, photo_url: null,
   });
+  const [currentMeal, setCurrentMeal] = useState(meal);
+  const [groups, setGroups] = useState(meal?.meal_option_groups || []);
   const [photoFile, setPhotoFile] = useState(null);
   const [preview, setPreview] = useState(meal?.photo_url || null);
   const [saving, setSaving] = useState(false);
@@ -47,8 +50,8 @@ export function MealEditor({ meal, onCancel, onSaved }) {
       };
 
       let saved;
-      if (meal?.id) {
-        const { data, error: updateError } = await supabase.from("meals").update(payload).eq("id", meal.id).select().single();
+      if (currentMeal?.id) {
+        const { data, error: updateError } = await supabase.from("meals").update(payload).eq("id", currentMeal.id).select().single();
         if (updateError) throw updateError;
         saved = data;
       } else {
@@ -56,7 +59,8 @@ export function MealEditor({ meal, onCancel, onSaved }) {
         if (insertError) throw insertError;
         saved = data;
       }
-      onSaved(saved);
+      setCurrentMeal({ ...saved, meal_option_groups: groups });
+      onSaved({ ...saved, meal_option_groups: groups });
     } catch (e) {
       setError(e.message);
     } finally {
@@ -64,11 +68,16 @@ export function MealEditor({ meal, onCancel, onSaved }) {
     }
   };
 
+  const handleGroupsChange = (updatedGroups) => {
+    setGroups(updatedGroups);
+    if (currentMeal) onSaved({ ...currentMeal, meal_option_groups: updatedGroups });
+  };
+
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(11,14,26,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 80, padding: 16 }}>
       <div style={{ background: "var(--fu-card)", borderRadius: 20, padding: 20, width: "100%", maxWidth: 420, maxHeight: "88vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 17 }}>{meal ? "Edit meal" : "Add meal"}</div>
+          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 17, color: "var(--fu-text)" }}>{currentMeal ? "Edit meal" : "Add meal"}</div>
           <button onClick={onCancel} style={{ background: "var(--fu-card-alt)", border: "none", borderRadius: 10, padding: 6, cursor: "pointer", color: "var(--fu-text)" }}><X size={16} /></button>
         </div>
 
@@ -101,9 +110,17 @@ export function MealEditor({ meal, onCancel, onSaved }) {
           <SmallField label="Fat (g)" type="number" value={form.fat} onChange={v => set("fat", v.target.value)} />
         </div>
         {error && <div style={{ color: "#FF5A5F", fontSize: 12.5, marginTop: 4, fontWeight: 600 }}>{error}</div>}
-        <button onClick={save} disabled={saving} style={{ width: "100%", marginTop: 10, padding: 14, borderRadius: 14, border: "none", background: "var(--fu-cta-bg)", color: "var(--fu-cta-text)", fontWeight: 800, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}>
+        <button onClick={save} disabled={saving} style={{ width: "100%", marginTop: 10, marginBottom: 16, padding: 14, borderRadius: 14, border: "none", background: "var(--fu-cta-bg)", color: "var(--fu-cta-text)", fontWeight: 800, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}>
           {saving ? "Saving…" : "Save meal"}
         </button>
+
+        {currentMeal?.id ? (
+          <MealOptionsEditor mealId={currentMeal.id} groups={groups} onGroupsChange={handleGroupsChange} />
+        ) : (
+          <div style={{ fontSize: 12, color: "var(--fu-text-muted)", textAlign: "center", padding: "8px 0" }}>
+            Save this meal first to add customization options (extra protein, choose your carb, etc.).
+          </div>
+        )}
       </div>
     </div>
   );

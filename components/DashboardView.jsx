@@ -9,9 +9,11 @@ import { MacroBar } from "@/components/MacroBar";
 import { MealCard, Tag } from "@/components/MealCard";
 import { FRESHU_LOGO } from "@/components/Shell";
 import { LogFoodModal } from "@/components/LogFoodModal";
+import { MealOptionsModal } from "@/components/MealOptionsModal";
 import { BUDDY_STATES, fuelState, computeFuelScore } from "@/lib/fuel";
 import { addMinutes, minutesOfDay, timeStrFromMinutes, fmtTime } from "@/lib/format";
 import { computeMealMinutes, DEFAULT_MEAL_MINUTES } from "@/lib/schedule";
+import { applyOptionsToMeal, optionsLabel } from "@/lib/mealOptions";
 import { createClient } from "@/lib/supabase/client";
 
 export function DashboardView({ profile, todayLog, suggested, todayEvents }) {
@@ -19,6 +21,7 @@ export function DashboardView({ profile, todayLog, suggested, todayEvents }) {
   const [pending, setPending] = useState(null);
   const [showLogFood, setShowLogFood] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [customizing, setCustomizing] = useState(null);
 
   const totals = useMemo(() => todayLog.reduce((acc, m) => ({
     calories: acc.calories + (m.calories || 0), protein: acc.protein + (m.protein || 0),
@@ -63,19 +66,29 @@ export function DashboardView({ profile, todayLog, suggested, todayEvents }) {
 
   const eatenMealIds = new Set(todayLog.map(l => l.meal_id));
 
-  const handleEat = async (meal) => {
+  const logMeal = async (meal, selectedOptions) => {
     setPending(meal.id);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
+    const totals = applyOptionsToMeal(meal, selectedOptions);
     await supabase.from("daily_logs").upsert({
       athlete_id: user.id,
       meal_id: meal.id,
       log_date: new Date().toISOString().slice(0, 10),
       name: meal.name, emoji: meal.emoji,
-      calories: meal.calories, protein: meal.protein, carbs: meal.carbs, fat: meal.fat,
+      calories: totals.calories, protein: totals.protein, carbs: totals.carbs, fat: totals.fat,
+      selected_options: selectedOptions.map(o => ({ id: o.id, label: o.label })),
     }, { onConflict: "athlete_id,meal_id,log_date" });
     setPending(null);
     router.refresh();
+  };
+
+  const handleEat = (meal) => {
+    if (meal.meal_option_groups?.length) {
+      setCustomizing(meal);
+    } else {
+      logMeal(meal, []);
+    }
   };
 
   const handleDeleteLog = async (logId) => {
@@ -146,6 +159,9 @@ export function DashboardView({ profile, todayLog, suggested, todayEvents }) {
                 <div style={{ fontSize: 20 }}>{entry.emoji || "🍽️"}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 13, color: "var(--fu-text)" }}>{entry.name}</div>
+                  {entry.selected_options?.length > 0 && (
+                    <div style={{ fontSize: 11, color: "var(--fu-text-secondary)", marginTop: 1 }}>{optionsLabel(entry.selected_options)}</div>
+                  )}
                   <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
                     <Tag label={`${entry.calories} cal`} />
                     <Tag label={`${entry.protein}g P`} />
@@ -193,6 +209,15 @@ export function DashboardView({ profile, todayLog, suggested, todayEvents }) {
         <LogFoodModal
           onClose={() => setShowLogFood(false)}
           onSaved={() => { setShowLogFood(false); router.refresh(); }}
+        />
+      )}
+
+      {customizing && (
+        <MealOptionsModal
+          meal={customizing}
+          actionLabel="Log this"
+          onCancel={() => setCustomizing(null)}
+          onConfirm={(selectedOptions) => { logMeal(customizing, selectedOptions); setCustomizing(null); }}
         />
       )}
     </div>

@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { X, Trash2, ShoppingBag, Search } from "lucide-react";
 import { MealCard } from "@/components/MealCard";
+import { MealOptionsModal } from "@/components/MealOptionsModal";
 import { useCart } from "@/lib/cartContext";
 import { createClient } from "@/lib/supabase/client";
 import { CART_MAX } from "@/lib/constants";
+import { applyOptionsToMeal, optionsLabel } from "@/lib/mealOptions";
 
 export function MenuView({ meals, eatenMealIds }) {
   const router = useRouter();
@@ -16,6 +18,7 @@ export function MenuView({ meals, eatenMealIds }) {
   const [checkingOut, setCheckingOut] = useState(false);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(null);
+  const [customizing, setCustomizing] = useState(null); // { meal, mode: 'add' | 'eat' }
 
   const filtered = meals.filter(m =>
     m.name.toLowerCase().includes(query.toLowerCase()) || m.category.toLowerCase().includes(query.toLowerCase())
@@ -23,21 +26,39 @@ export function MenuView({ meals, eatenMealIds }) {
   const grouped = [...new Set(filtered.map(m => m.category))].map(cat => [cat, filtered.filter(m => m.category === cat)]);
   const eatenSet = new Set(eatenMealIds);
   const cartIds = new Set(cart.map(c => c.id));
-  const total = cart.reduce((s, m) => s + Number(m.price), 0);
+  const total = cart.reduce((s, m) => s + applyOptionsToMeal(m, m.selectedOptions || []).price, 0);
 
-  const handleEat = async (meal) => {
+  const logMeal = async (meal, selectedOptions) => {
     setPending(meal.id);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
+    const totals = applyOptionsToMeal(meal, selectedOptions);
     await supabase.from("daily_logs").upsert({
       athlete_id: user.id,
       meal_id: meal.id,
       log_date: new Date().toISOString().slice(0, 10),
       name: meal.name, emoji: meal.emoji,
-      calories: meal.calories, protein: meal.protein, carbs: meal.carbs, fat: meal.fat,
+      calories: totals.calories, protein: totals.protein, carbs: totals.carbs, fat: totals.fat,
+      selected_options: selectedOptions.map(o => ({ id: o.id, label: o.label })),
     }, { onConflict: "athlete_id,meal_id,log_date" });
     setPending(null);
     router.refresh();
+  };
+
+  const handleEat = (meal) => {
+    if (meal.meal_option_groups?.length) {
+      setCustomizing({ meal, mode: "eat" });
+    } else {
+      logMeal(meal, []);
+    }
+  };
+
+  const handleAdd = (meal) => {
+    if (meal.meal_option_groups?.length) {
+      setCustomizing({ meal, mode: "add" });
+    } else {
+      addToCart(meal, []);
+    }
   };
 
   const handleCheckout = async () => {
@@ -47,7 +68,9 @@ export function MenuView({ meals, eatenMealIds }) {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mealIds: cart.map(m => m.id) }),
+        body: JSON.stringify({
+          items: cart.map(m => ({ mealId: m.id, optionIds: (m.selectedOptions || []).map(o => o.id) })),
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Checkout failed.");
@@ -85,7 +108,7 @@ export function MenuView({ meals, eatenMealIds }) {
             {items.map(m => (
               <MealCard key={m.id} meal={m}
                 onEat={() => handleEat(m)} eaten={eatenSet.has(m.id) || pending === m.id}
-                onAdd={addToCart} inCart={cartIds.has(m.id)} cartFull={cartFull} />
+                onAdd={handleAdd} inCart={cartIds.has(m.id)} cartFull={cartFull} />
             ))}
           </div>
         </div>
@@ -101,16 +124,22 @@ export function MenuView({ meals, eatenMealIds }) {
             </div>
             <div style={{ overflowY: "auto", flex: 1 }}>
               {cart.length === 0 && <div style={{ color: "var(--fu-text-muted)", fontSize: 13.5, textAlign: "center", padding: "30px 0" }}>Your cart is empty. Add up to {CART_MAX} meals.</div>}
-              {cart.map(m => (
-                <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: "1px solid var(--fu-border)" }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 12, background: `${m.color}1a`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{m.emoji}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: "var(--fu-text)" }}>{m.name}</div>
-                    <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)" }}>${Number(m.price).toFixed(2)}</div>
+              {cart.map(m => {
+                const itemTotals = applyOptionsToMeal(m, m.selectedOptions || []);
+                return (
+                  <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: "1px solid var(--fu-border)" }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 12, background: `${m.color}1a`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{m.emoji}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: "var(--fu-text)" }}>{m.name}</div>
+                      {m.selectedOptions?.length > 0 && (
+                        <div style={{ fontSize: 11, color: "var(--fu-text-secondary)", marginTop: 1 }}>{optionsLabel(m.selectedOptions)}</div>
+                      )}
+                      <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)" }}>${itemTotals.price.toFixed(2)}</div>
+                    </div>
+                    <button onClick={() => removeFromCart(m.id)} style={{ background: "none", border: "none", cursor: "pointer" }}><Trash2 size={16} color="#FF5A5F" /></button>
                   </div>
-                  <button onClick={() => removeFromCart(m.id)} style={{ background: "none", border: "none", cursor: "pointer" }}><Trash2 size={16} color="#FF5A5F" /></button>
-                </div>
-              ))}
+                );
+              })}
             </div>
             {error && <div style={{ color: "#FF5A5F", fontSize: 12.5, marginTop: 8, fontWeight: 600 }}>{error}</div>}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, marginBottom: 12 }}>
@@ -125,6 +154,22 @@ export function MenuView({ meals, eatenMealIds }) {
             </button>
           </div>
         </div>
+      )}
+
+      {customizing && (
+        <MealOptionsModal
+          meal={customizing.meal}
+          actionLabel={customizing.mode === "add" ? "Add to cart" : "Log this"}
+          onCancel={() => setCustomizing(null)}
+          onConfirm={(selectedOptions) => {
+            if (customizing.mode === "add") {
+              addToCart(customizing.meal, selectedOptions);
+            } else {
+              logMeal(customizing.meal, selectedOptions);
+            }
+            setCustomizing(null);
+          }}
+        />
       )}
     </div>
   );

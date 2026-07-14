@@ -64,6 +64,7 @@ export function LoginForm() {
               {showPw ? <EyeOff size={17} color="var(--fu-text-muted)" /> : <Eye size={17} color="var(--fu-text-muted)" />}
             </button>
           </div>
+          <a href="/forgot-password" style={{ display: "block", textAlign: "right", fontSize: 12.5, color: "var(--fu-text-secondary)", textDecoration: "none", marginTop: -4 }}>Forgot password?</a>
         </div>
         {error && <div style={{ color: "#FF5A5F", fontSize: 12.5, marginBottom: 10, fontWeight: 600 }}>{error}</div>}
         <button

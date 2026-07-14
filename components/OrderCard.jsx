@@ -1,6 +1,9 @@
 "use client";
 
+import { optionsLabel } from "@/lib/mealOptions";
+
 export function OrderCard({ order }) {
+  const withOptions = order.items.filter(it => it.selected_options?.length);
   return (
     <div style={{ background: "var(--fu-card)", borderRadius: 20, padding: 16, marginBottom: 12, boxShadow: "0 2px 14px rgba(0,0,0,0.35)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -19,6 +22,13 @@ export function OrderCard({ order }) {
           <span key={i} style={{ fontSize: 18 }}>{it.emoji}</span>
         ))}
       </div>
+      {withOptions.length > 0 && (
+        <div style={{ fontSize: 11, color: "var(--fu-text-secondary)", marginTop: 8, lineHeight: 1.5 }}>
+          {withOptions.map((it, i) => (
+            <div key={i}>{it.name}: {optionsLabel(it.selected_options)}</div>
+          ))}
+        </div>
+      )}
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--fu-border)" }}>
         <span style={{ fontSize: 12.5, color: "var(--fu-text-secondary)" }}>Total</span>
         <span style={{ fontWeight: 800, fontSize: 14, color: "var(--fu-text)" }}>${Number(order.total).toFixed(2)}</span>

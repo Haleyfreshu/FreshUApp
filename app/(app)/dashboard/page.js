@@ -11,7 +11,7 @@ export default async function DashboardPage() {
   const [{ data: profile }, { data: todayLog }, { data: meals }, { data: todayEvents }] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).single(),
     supabase.from("daily_logs").select("*").eq("athlete_id", user.id).eq("log_date", today),
-    supabase.from("meals").select("*").order("created_at", { ascending: true }),
+    supabase.from("meals").select("*, meal_option_groups(*, meal_options(*))").eq("is_active", true).order("created_at", { ascending: true }),
     supabase.from("training_events").select("*").eq("athlete_id", user.id).eq("day_of_week", todayAbbrev()),
   ]);
 

@@ -4,16 +4,22 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { Field } from "@/components/Fields";
+import { TrainingScheduleEditor } from "@/components/TrainingScheduleEditor";
 import { fmtTime } from "@/lib/format";
 import { createClient } from "@/lib/supabase/client";
 
-export function ProfileView({ profile }) {
+export function ProfileView({ profile, initialEvents }) {
   const router = useRouter();
   const [edit, setEdit] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(profile);
   useEffect(() => setForm(profile), [profile]);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const [editSchedule, setEditSchedule] = useState(false);
+  const [savingSchedule, setSavingSchedule] = useState(false);
+  const [events, setEvents] = useState(initialEvents);
+  useEffect(() => setEvents(initialEvents), [initialEvents]);
 
   const save = async () => {
     setSaving(true);
@@ -28,6 +34,21 @@ export function ProfileView({ profile }) {
     }).eq("id", profile.id);
     setSaving(false);
     setEdit(false);
+    router.refresh();
+  };
+
+  const saveSchedule = async () => {
+    setSavingSchedule(true);
+    const supabase = createClient();
+    await supabase.from("training_events").delete().eq("athlete_id", profile.id);
+    const cleanEvents = events.filter(e => e.label.trim());
+    if (cleanEvents.length > 0) {
+      await supabase.from("training_events").insert(
+        cleanEvents.map(e => ({ athlete_id: profile.id, day_of_week: e.day_of_week, label: e.label.trim(), event_time: e.event_time }))
+      );
+    }
+    setSavingSchedule(false);
+    setEditSchedule(false);
     router.refresh();
   };
 
@@ -80,9 +101,26 @@ export function ProfileView({ profile }) {
       </div>
 
       <div style={{ background: "#fff", borderRadius: 20, padding: 18, marginTop: 14, boxShadow: "0 2px 14px rgba(15,20,50,0.06)" }}>
-        <div style={{ fontWeight: 800, fontSize: 13.5, marginBottom: 10 }}>Training schedule</div>
-        <div style={{ fontSize: 12.5, color: "#6B7290" }}>Practice days: {form.practice_days?.join(", ") || "—"}</div>
-        <div style={{ fontSize: 12.5, color: "#6B7290", marginTop: 4 }}>Practice time: {fmtTime(form.practice_time)}</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+          <div style={{ fontWeight: 800, fontSize: 13.5 }}>Training schedule</div>
+          <button onClick={() => editSchedule ? saveSchedule() : setEditSchedule(true)} disabled={savingSchedule} style={{ background: "#F3F5FB", border: "none", borderRadius: 10, padding: "6px 12px", color: "#0B0E1A", fontWeight: 700, fontSize: 11.5, cursor: "pointer" }}>
+            {savingSchedule ? "Saving…" : editSchedule ? "Save" : "Edit"}
+          </button>
+        </div>
+        {editSchedule ? (
+          <TrainingScheduleEditor events={events} onChange={setEvents} />
+        ) : events.length === 0 ? (
+          <div style={{ fontSize: 12.5, color: "#9AA0BF" }}>No training events added yet.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {events.map(ev => (
+              <div key={ev.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#6B7290" }}>
+                <span><strong style={{ color: "#0B0E1A" }}>{ev.day_of_week}</strong> · {ev.label}</span>
+                <span>{fmtTime(ev.event_time)}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <button onClick={logout} style={{

@@ -9,10 +9,17 @@ import { MacroBar } from "@/components/MacroBar";
 import { MealCard } from "@/components/MealCard";
 import { FRESHU_LOGO } from "@/components/Shell";
 import { BUDDY_STATES, fuelState, computeFuelScore } from "@/lib/fuel";
-import { timeMinusPlus } from "@/lib/format";
+import { addMinutes, minutesOfDay, fmtTime } from "@/lib/format";
 import { createClient } from "@/lib/supabase/client";
 
-export function DashboardView({ profile, todayLog, suggested }) {
+const MEAL_ANCHORS = [
+  { label: "Breakfast", time: "07:00" },
+  { label: "Lunch", time: "12:00" },
+  { label: "Dinner", time: "19:00" },
+  { label: "Evening Snack", time: "21:00" },
+];
+
+export function DashboardView({ profile, todayLog, suggested, todayEvents }) {
   const router = useRouter();
   const [pending, setPending] = useState(null);
 
@@ -25,17 +32,16 @@ export function DashboardView({ profile, todayLog, suggested }) {
   const state = BUDDY_STATES[fuelState(score)];
 
   const schedule = useMemo(() => {
-    const pre = timeMinusPlus(profile.practice_time, -60);
-    const post = timeMinusPlus(profile.practice_time, 45);
-    return [
-      { slot: "Breakfast", time: "7:00 AM" },
-      { slot: "Lunch", time: "12:00 PM" },
-      { slot: "Pre-Practice Fuel", time: pre },
-      { slot: "Post-Practice Recovery", time: post },
-      { slot: "Dinner", time: "7:00 PM" },
-      { slot: "Evening Snack", time: "9:00 PM" },
-    ];
-  }, [profile.practice_time]);
+    const entries = MEAL_ANCHORS.map(a => ({ slot: a.label, minutes: minutesOfDay(a.time), time: fmtTime(a.time) }));
+    todayEvents.forEach(ev => {
+      entries.push({ slot: ev.label, minutes: minutesOfDay(ev.event_time), time: fmtTime(ev.event_time) });
+      const pre = addMinutes(ev.event_time, -60);
+      const post = addMinutes(ev.event_time, 45);
+      entries.push({ slot: `Pre-${ev.label} Fuel`, minutes: minutesOfDay(pre), time: fmtTime(pre) });
+      entries.push({ slot: `Post-${ev.label} Recovery`, minutes: minutesOfDay(post), time: fmtTime(post) });
+    });
+    return entries.sort((a, b) => a.minutes - b.minutes);
+  }, [todayEvents]);
 
   const eatenMealIds = new Set(todayLog.map(l => l.meal_id));
 
@@ -97,7 +103,7 @@ export function DashboardView({ profile, todayLog, suggested }) {
         <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 15, color: "#0B0E1A", marginBottom: 10 }}>Your Fueling Schedule</div>
         <div style={{ background: "#fff", borderRadius: 20, padding: "6px 4px", boxShadow: "0 4px 20px rgba(15,20,50,0.06)" }}>
           {schedule.map((s, i) => (
-            <div key={s.slot} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderBottom: i < schedule.length - 1 ? "1px solid #F3F5FB" : "none" }}>
+            <div key={`${s.slot}-${s.minutes}`} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderBottom: i < schedule.length - 1 ? "1px solid #F3F5FB" : "none" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <Clock size={15} color="#2A3EFF" />
                 <span style={{ fontSize: 13.5, fontWeight: 600, color: "#0B0E1A" }}>{s.slot}</span>

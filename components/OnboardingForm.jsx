@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { GOAL_PRESETS, SPORTS, DAYS } from "@/lib/constants";
+import { GOAL_PRESETS, SPORTS } from "@/lib/constants";
 import { AuthField } from "@/components/Fields";
+import { TrainingScheduleEditor } from "@/components/TrainingScheduleEditor";
 import { createClient } from "@/lib/supabase/client";
 
 export function OnboardingForm({ userId }) {
@@ -14,7 +15,7 @@ export function OnboardingForm({ userId }) {
   const [form, setForm] = useState({
     school: "", sport: "", age: "", height: "", weight: "",
     goal: "Lean Performance", calorieGoal: 2400, proteinGoal: 160, carbGoal: 250, fatGoal: 70,
-    days: [], practiceTime: "16:00",
+    events: [],
   });
   const steps = ["Basics", "Sport", "Goals", "Schedule"];
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -22,13 +23,12 @@ export function OnboardingForm({ userId }) {
     const preset = GOAL_PRESETS[g];
     setForm(f => ({ ...f, goal: g, calorieGoal: preset.calories, proteinGoal: preset.protein, carbGoal: preset.carbs, fatGoal: preset.fat }));
   };
-  const toggleDay = (d) => setForm(f => ({ ...f, days: f.days.includes(d) ? f.days.filter(x => x !== d) : [...f.days, d] }));
 
   const canNext = () => {
     if (step === 0) return form.school && form.age && form.height && form.weight;
     if (step === 1) return form.sport;
     if (step === 2) return true;
-    if (step === 3) return form.days.length > 0;
+    if (step === 3) return form.events.length > 0 && form.events.every(e => e.label.trim());
     return true;
   };
 
@@ -47,13 +47,20 @@ export function OnboardingForm({ userId }) {
       protein_goal: form.proteinGoal,
       carb_goal: form.carbGoal,
       fat_goal: form.fatGoal,
-      practice_days: form.days,
-      practice_time: form.practiceTime,
       onboarded: true,
     }).eq("id", userId);
-    setSaving(false);
     if (updateError) {
+      setSaving(false);
       setError(updateError.message);
+      return;
+    }
+
+    const { error: eventsError } = await supabase.from("training_events").insert(
+      form.events.map(e => ({ athlete_id: userId, day_of_week: e.day_of_week, label: e.label.trim(), event_time: e.event_time }))
+    );
+    setSaving(false);
+    if (eventsError) {
+      setError(eventsError.message);
       return;
     }
     router.push("/dashboard");
@@ -127,17 +134,10 @@ export function OnboardingForm({ userId }) {
 
         {step === 3 && (
           <>
-            <div style={{ fontSize: 12.5, fontWeight: 700, color: "#4C5378", marginBottom: 8 }}>Practice days</div>
-            <div style={{ display: "flex", gap: 8, marginBottom: 18, flexWrap: "wrap" }}>
-              {DAYS.map(d => (
-                <button key={d} onClick={() => toggleDay(d)} style={{
-                  width: 46, height: 46, borderRadius: 12,
-                  border: form.days.includes(d) ? "2px solid #2A3EFF" : "1.5px solid #E7EBF7",
-                  background: form.days.includes(d) ? "#2A3EFF14" : "#fff", color: "#0B0E1A", fontWeight: 700, fontSize: 12.5, cursor: "pointer"
-                }}>{d}</button>
-              ))}
+            <div style={{ fontSize: 12.5, color: "#6B7290", marginBottom: 14 }}>
+              Add each training block — lifts, practice, whatever your week looks like — with its own day and time.
             </div>
-            <AuthField label="Typical practice start time" type="time" value={form.practiceTime} onChange={e => set("practiceTime", e.target.value)} />
+            <TrainingScheduleEditor events={form.events} onChange={(events) => set("events", events)} />
           </>
         )}
       </div>

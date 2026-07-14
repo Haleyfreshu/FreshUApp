@@ -2,12 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Flame, Beef, Wheat, Droplet, Clock } from "lucide-react";
+import { Flame, Beef, Wheat, Droplet, Clock, Plus, Trash2 } from "lucide-react";
 import { Ring } from "@/components/Ring";
 import { FuelBuddy } from "@/components/FuelBuddy";
 import { MacroBar } from "@/components/MacroBar";
-import { MealCard } from "@/components/MealCard";
+import { MealCard, Tag } from "@/components/MealCard";
 import { FRESHU_LOGO } from "@/components/Shell";
+import { LogFoodModal } from "@/components/LogFoodModal";
 import { BUDDY_STATES, fuelState, computeFuelScore } from "@/lib/fuel";
 import { addMinutes, minutesOfDay, timeStrFromMinutes, fmtTime } from "@/lib/format";
 import { computeMealMinutes, DEFAULT_MEAL_MINUTES } from "@/lib/schedule";
@@ -16,6 +17,8 @@ import { createClient } from "@/lib/supabase/client";
 export function DashboardView({ profile, todayLog, suggested, todayEvents }) {
   const router = useRouter();
   const [pending, setPending] = useState(null);
+  const [showLogFood, setShowLogFood] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   const totals = useMemo(() => todayLog.reduce((acc, m) => ({
     calories: acc.calories + (m.calories || 0), protein: acc.protein + (m.protein || 0),
@@ -75,6 +78,14 @@ export function DashboardView({ profile, todayLog, suggested, todayEvents }) {
     router.refresh();
   };
 
+  const handleDeleteLog = async (logId) => {
+    setDeletingId(logId);
+    const supabase = createClient();
+    await supabase.from("daily_logs").delete().eq("id", logId);
+    setDeletingId(null);
+    router.refresh();
+  };
+
   return (
     <div style={{ padding: "18px 20px 20px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -115,6 +126,43 @@ export function DashboardView({ profile, todayLog, suggested, todayEvents }) {
       </div>
 
       <div style={{ marginTop: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 15, color: "#0B0E1A" }}>Today&apos;s Log</div>
+          <button onClick={() => setShowLogFood(true)} style={{
+            display: "flex", alignItems: "center", gap: 6, background: "#2A3EFF", border: "none", borderRadius: 12,
+            padding: "8px 12px", color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer"
+          }}>
+            <Plus size={13} /> Log food
+          </button>
+        </div>
+        {todayLog.length === 0 ? (
+          <div style={{ background: "#fff", borderRadius: 18, padding: "20px 16px", textAlign: "center", color: "#9AA0BF", fontSize: 13, boxShadow: "0 2px 10px rgba(15,20,50,0.05)" }}>
+            Nothing logged yet today.
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {todayLog.map(entry => (
+              <div key={entry.id} style={{ background: "#fff", borderRadius: 16, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, boxShadow: "0 2px 10px rgba(15,20,50,0.05)" }}>
+                <div style={{ fontSize: 20 }}>{entry.emoji || "🍽️"}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: "#0B0E1A" }}>{entry.name}</div>
+                  <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+                    <Tag label={`${entry.calories} cal`} />
+                    <Tag label={`${entry.protein}g P`} />
+                    <Tag label={`${entry.carbs}g C`} />
+                    <Tag label={`${entry.fat}g F`} />
+                  </div>
+                </div>
+                <button onClick={() => handleDeleteLog(entry.id)} disabled={deletingId === entry.id} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, flexShrink: 0 }}>
+                  <Trash2 size={15} color="#FF5A5F" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div style={{ marginTop: 20 }}>
         <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 15, color: "#0B0E1A" }}>Your Fueling Schedule</div>
         {scheduleAdjusted && (
           <div style={{ fontSize: 11.5, color: "#9AA0BF", marginTop: 2, marginBottom: 8 }}>Auto-adjusted around today&apos;s training</div>
@@ -140,6 +188,13 @@ export function DashboardView({ profile, todayLog, suggested, todayEvents }) {
           ))}
         </div>
       </div>
+
+      {showLogFood && (
+        <LogFoodModal
+          onClose={() => setShowLogFood(false)}
+          onSaved={() => { setShowLogFood(false); router.refresh(); }}
+        />
+      )}
     </div>
   );
 }

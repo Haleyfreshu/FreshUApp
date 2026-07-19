@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { CART_MAX } from "@/lib/constants";
 import { applyOptionsToMeal, optionsLabel } from "@/lib/mealOptions";
 
-export function MenuView({ meals, eatenMealIds }) {
+export function MenuView({ meals, eatenMealIds, orderingOpen }) {
   const router = useRouter();
   const { cart, addToCart, removeFromCart, cartFull } = useCart();
   const [query, setQuery] = useState("");
@@ -95,6 +95,12 @@ export function MenuView({ meals, eatenMealIds }) {
       </div>
       <div style={{ fontSize: 13, color: "var(--fu-text-secondary)", marginTop: 4 }}>Choose 1–{CART_MAX} meals for this week. {cart.length}/{CART_MAX} selected.</div>
 
+      {!orderingOpen && (
+        <div style={{ background: "#FFB64822", border: "1px solid #FFB64855", borderRadius: 14, padding: "12px 14px", marginTop: 14, fontSize: 13, color: "var(--fu-text)", lineHeight: 1.4 }}>
+          Ordering is open Sunday through Wednesday. You can browse the menu, but adding meals and checkout are turned off until it reopens Sunday.
+        </div>
+      )}
+
       <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--fu-card)", borderRadius: 14, padding: "10px 14px", marginTop: 14, boxShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>
         <Search size={16} color="var(--fu-text-muted)" />
         <input placeholder="Search meals or category" value={query} onChange={e => setQuery(e.target.value)}
@@ -108,7 +114,7 @@ export function MenuView({ meals, eatenMealIds }) {
             {items.map(m => (
               <MealCard key={m.id} meal={m}
                 onEat={() => handleEat(m)} eaten={eatenSet.has(m.id) || pending === m.id}
-                onAdd={handleAdd} inCart={cartIds.has(m.id)} cartFull={cartFull} />
+                onAdd={handleAdd} inCart={cartIds.has(m.id)} cartFull={cartFull || !orderingOpen} />
             ))}
           </div>
         </div>
@@ -147,10 +153,10 @@ export function MenuView({ meals, eatenMealIds }) {
               <span style={{ fontWeight: 800, fontSize: 18, color: "var(--fu-text)" }}>${total.toFixed(2)}</span>
             </div>
             <button
-              disabled={cart.length === 0 || checkingOut}
+              disabled={cart.length === 0 || checkingOut || !orderingOpen}
               onClick={handleCheckout}
-              style={{ width: "100%", padding: 15, borderRadius: 14, border: "none", background: cart.length ? "#2A3EFF" : "var(--fu-card-alt)", color: cart.length ? "#fff" : "var(--fu-text-muted)", fontWeight: 800, fontSize: 15, cursor: cart.length ? "pointer" : "default", opacity: checkingOut ? 0.7 : 1 }}>
-              {checkingOut ? "Redirecting to secure checkout…" : "Continue to checkout"}
+              style={{ width: "100%", padding: 15, borderRadius: 14, border: "none", background: cart.length && orderingOpen ? "#2A3EFF" : "var(--fu-card-alt)", color: cart.length && orderingOpen ? "#fff" : "var(--fu-text-muted)", fontWeight: 800, fontSize: 15, cursor: cart.length && orderingOpen ? "pointer" : "default", opacity: checkingOut ? 0.7 : 1 }}>
+              {checkingOut ? "Redirecting to secure checkout…" : orderingOpen ? "Continue to checkout" : "Ordering opens Sunday"}
             </button>
           </div>
         </div>

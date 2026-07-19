@@ -4,12 +4,17 @@ import { getStripe } from "@/lib/stripe";
 import { weekOfLabel } from "@/lib/format";
 import { CART_MAX } from "@/lib/constants";
 import { applyOptionsToMeal, optionsLabel } from "@/lib/mealOptions";
+import { isOrderingOpen } from "@/lib/orderWindow";
 
 export async function POST(request) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+  }
+
+  if (!isOrderingOpen()) {
+    return NextResponse.json({ error: "Ordering is closed right now — it opens again Sunday." }, { status: 400 });
   }
 
   const { items } = await request.json();

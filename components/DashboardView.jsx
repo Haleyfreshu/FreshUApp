@@ -9,19 +9,18 @@ import { MacroBar } from "@/components/MacroBar";
 import { MealCard, Tag } from "@/components/MealCard";
 import { FRESHU_LOGO } from "@/components/Shell";
 import { LogFoodModal } from "@/components/LogFoodModal";
-import { MealOptionsModal } from "@/components/MealOptionsModal";
 import { BUDDY_STATES, fuelState, computeFuelScore } from "@/lib/fuel";
 import { addMinutes, minutesOfDay, timeStrFromMinutes, fmtTime } from "@/lib/format";
 import { computeMealMinutes, DEFAULT_MEAL_MINUTES } from "@/lib/schedule";
-import { applyOptionsToMeal, optionsLabel } from "@/lib/mealOptions";
+import { optionsLabel } from "@/lib/mealOptions";
+import { civilDateStr } from "@/lib/orderWindow";
 import { createClient } from "@/lib/supabase/client";
 
-export function DashboardView({ profile, todayLog, suggested, todayEvents }) {
+export function DashboardView({ profile, todayLog, weeklyMeals, weekEatenMealIds, todayEvents }) {
   const router = useRouter();
   const [pending, setPending] = useState(null);
   const [showLogFood, setShowLogFood] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
-  const [customizing, setCustomizing] = useState(null);
 
   const totals = useMemo(() => todayLog.reduce((acc, m) => ({
     calories: acc.calories + (m.calories || 0), protein: acc.protein + (m.protein || 0),
@@ -64,31 +63,26 @@ export function DashboardView({ profile, todayLog, suggested, todayEvents }) {
     return entries.sort((a, b) => a.minutes - b.minutes);
   }, [mealMinutes, todayEvents]);
 
-  const eatenMealIds = new Set(todayLog.map(l => l.meal_id));
+  const eatenTodayIds = new Set(todayLog.map(l => l.meal_id));
+  const eatenThisWeekIds = new Set(weekEatenMealIds);
 
-  const logMeal = async (meal, selectedOptions) => {
-    setPending(meal.id);
+  // Quick Log meals are already-purchased order items — their macros and
+  // any customization are locked in from checkout, so logging them just
+  // records exactly what was ordered, no picker needed.
+  const handleEatOrdered = async (item) => {
+    setPending(item.meal_id);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    const totals = applyOptionsToMeal(meal, selectedOptions);
     await supabase.from("daily_logs").upsert({
       athlete_id: user.id,
-      meal_id: meal.id,
-      log_date: new Date().toISOString().slice(0, 10),
-      name: meal.name, emoji: meal.emoji,
-      calories: totals.calories, protein: totals.protein, carbs: totals.carbs, fat: totals.fat,
-      selected_options: selectedOptions.map(o => ({ id: o.id, label: o.label })),
+      meal_id: item.meal_id,
+      log_date: civilDateStr(),
+      name: item.name, emoji: item.emoji,
+      calories: item.calories, protein: item.protein, carbs: item.carbs, fat: item.fat,
+      selected_options: item.selected_options || [],
     }, { onConflict: "athlete_id,meal_id,log_date" });
     setPending(null);
     router.refresh();
-  };
-
-  const handleEat = (meal) => {
-    if (meal.meal_option_groups?.length) {
-      setCustomizing(meal);
-    } else {
-      logMeal(meal, []);
-    }
   };
 
   const handleDeleteLog = async (logId) => {
@@ -198,26 +192,24 @@ export function DashboardView({ profile, todayLog, suggested, todayEvents }) {
 
       <div style={{ marginTop: 20 }}>
         <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 15, color: "var(--fu-text)", marginBottom: 10 }}>Quick Log</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {suggested.map(m => (
-            <MealCard key={m.id} meal={m} compact onEat={() => handleEat(m)} eaten={eatenMealIds.has(m.id) || pending === m.id} />
-          ))}
-        </div>
+        {weeklyMeals.length === 0 ? (
+          <div style={{ background: "var(--fu-card)", borderRadius: 18, padding: "20px 16px", textAlign: "center", color: "var(--fu-text-muted)", fontSize: 13, boxShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>
+            No meals ordered for this week yet — order Sunday through Wednesday and they&apos;ll show up here.
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {weeklyMeals.map(item => (
+              <MealCard key={item.id} meal={item} compact onEat={() => handleEatOrdered(item)}
+                eaten={eatenThisWeekIds.has(item.meal_id) || eatenTodayIds.has(item.meal_id) || pending === item.meal_id} />
+            ))}
+          </div>
+        )}
       </div>
 
       {showLogFood && (
         <LogFoodModal
           onClose={() => setShowLogFood(false)}
           onSaved={() => { setShowLogFood(false); router.refresh(); }}
-        />
-      )}
-
-      {customizing && (
-        <MealOptionsModal
-          meal={customizing}
-          actionLabel="Log this"
-          onCancel={() => setCustomizing(null)}
-          onConfirm={(selectedOptions) => { logMeal(customizing, selectedOptions); setCustomizing(null); }}
         />
       )}
     </div>

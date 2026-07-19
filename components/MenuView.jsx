@@ -9,6 +9,7 @@ import { useCart } from "@/lib/cartContext";
 import { createClient } from "@/lib/supabase/client";
 import { CART_MAX } from "@/lib/constants";
 import { applyOptionsToMeal, optionsLabel } from "@/lib/mealOptions";
+import { civilDateStr } from "@/lib/orderWindow";
 
 export function MenuView({ meals, eatenMealIds, orderingOpen }) {
   const router = useRouter();
@@ -36,7 +37,7 @@ export function MenuView({ meals, eatenMealIds, orderingOpen }) {
     await supabase.from("daily_logs").upsert({
       athlete_id: user.id,
       meal_id: meal.id,
-      log_date: new Date().toISOString().slice(0, 10),
+      log_date: civilDateStr(),
       name: meal.name, emoji: meal.emoji,
       calories: totals.calories, protein: totals.protein, carbs: totals.carbs, fat: totals.fat,
       selected_options: selectedOptions.map(o => ({ id: o.id, label: o.label })),

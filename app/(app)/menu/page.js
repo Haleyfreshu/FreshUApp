@@ -1,11 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { MenuView } from "@/components/MenuView";
-import { isOrderingOpen } from "@/lib/orderWindow";
+import { isOrderingOpen, civilDateStr } from "@/lib/orderWindow";
 
 export default async function MenuPage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = civilDateStr();
 
   const [{ data: meals }, { data: todayLog }] = await Promise.all([
     supabase.from("meals").select("*, meal_option_groups(*, meal_options(*))").eq("is_active", true).order("created_at", { ascending: true }),

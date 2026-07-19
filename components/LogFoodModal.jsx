@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { SmallField } from "@/components/Fields";
 import { createClient } from "@/lib/supabase/client";
+import { civilDateStr } from "@/lib/orderWindow";
 
 export function LogFoodModal({ onClose, onSaved }) {
   const [form, setForm] = useState({ name: "", calories: "", protein: "", carbs: "", fat: "" });
@@ -21,7 +22,7 @@ export function LogFoodModal({ onClose, onSaved }) {
     const { error: insertError } = await supabase.from("daily_logs").insert({
       athlete_id: user.id,
       meal_id: null,
-      log_date: new Date().toISOString().slice(0, 10),
+      log_date: civilDateStr(),
       name: form.name.trim(),
       emoji: "🍽️",
       calories: Number(form.calories) || 0,

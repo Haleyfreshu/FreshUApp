@@ -6,9 +6,9 @@ export const FRESHU_LOGO = "/freshu-logo.png";
 
 export function Shell({ children }) {
   return (
-    <div style={{ minHeight: "100vh", background: "var(--fu-bg)", display: "flex", justifyContent: "center", padding: "0" }}>
+    <div style={{ minHeight: "100dvh", background: "var(--fu-bg)", display: "flex", justifyContent: "center", padding: "0" }}>
       <div style={{
-        width: "100%", maxWidth: 430, minHeight: "100vh", background: "var(--fu-bg)",
+        width: "100%", maxWidth: 430, minHeight: "100dvh", background: "var(--fu-bg)",
         display: "flex", flexDirection: "column", position: "relative", overflow: "hidden"
       }}>
         {children}

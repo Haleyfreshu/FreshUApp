@@ -8,7 +8,7 @@ function AppShellInner({ children }) {
   const { cart } = useCart();
   return (
     <Shell>
-      <div style={{ flex: 1, overflowY: "auto", paddingBottom: 6 }}>{children}</div>
+      <div style={{ flex: 1, overflowY: "auto", paddingBottom: "calc(70px + env(safe-area-inset-bottom, 0px))" }}>{children}</div>
       <BottomNav cartCount={cart.length} />
     </Shell>
   );

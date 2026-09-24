@@ -7,9 +7,9 @@ import { MealOptionsEditor } from "@/components/MealOptionsEditor";
 import { createClient } from "@/lib/supabase/client";
 import { STAFF_STORAGE_BUCKET } from "@/lib/constants";
 
-export function MealEditor({ meal, onCancel, onSaved }) {
+export function MealEditor({ meal, defaultDeliveryDay, onCancel, onSaved }) {
   const [form, setForm] = useState(meal || {
-    name: "", category: "Lunch", emoji: "🍽️", color: "#2A3EFF",
+    name: "", category: "Lunch", emoji: "🍽️", color: "#2A3EFF", delivery_day: defaultDeliveryDay || "monday",
     ingredients: "", calories: 500, protein: 30, carbs: 40, fat: 15, price: 10, photo_url: null,
   });
   const [currentMeal, setCurrentMeal] = useState(meal);
@@ -44,7 +44,7 @@ export function MealEditor({ meal, onCancel, onSaved }) {
       }
 
       const payload = {
-        name: form.name, category: form.category, emoji: form.emoji, color: form.color,
+        name: form.name, category: form.category, emoji: form.emoji, color: form.color, delivery_day: form.delivery_day,
         ingredients: form.ingredients, calories: +form.calories, protein: +form.protein,
         carbs: +form.carbs, fat: +form.fat, price: +form.price, photo_url,
       };
@@ -91,6 +91,23 @@ export function MealEditor({ meal, onCancel, onSaved }) {
               ) : form.emoji}
             </div>
             <input type="file" accept="image/*" onChange={onPhotoChange} style={{ fontSize: 12.5 }} />
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--fu-text-muted)", marginBottom: 6 }}>Menu</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {[["monday", "Monday Delivery"], ["thursday", "Thursday Delivery"]].map(([key, label]) => (
+              <button key={key} type="button" onClick={() => set("delivery_day", key)} style={{
+                flex: 1, padding: "9px 10px", borderRadius: 12,
+                border: form.delivery_day === key ? "1.5px solid #2A3EFF" : "1.5px solid var(--fu-border)",
+                background: form.delivery_day === key ? "#2A3EFF" : "var(--fu-card-alt)",
+                color: form.delivery_day === key ? "#fff" : "var(--fu-text-muted)",
+                fontWeight: 700, fontSize: 12.5, cursor: "pointer"
+              }}>
+                {label}
+              </button>
+            ))}
           </div>
         </div>
 

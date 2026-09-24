@@ -6,8 +6,16 @@ import { Shell } from "@/components/Shell";
 
 export function CheckoutSuccessView({ userId, order }) {
   useEffect(() => {
-    window.localStorage.removeItem(`freshu:cart:${userId}`);
-  }, [userId]);
+    if (!order?.delivery_day) return;
+    try {
+      const key = `freshu:carts:${userId}`;
+      const carts = JSON.parse(window.localStorage.getItem(key) || "{}");
+      carts[order.delivery_day] = [];
+      window.localStorage.setItem(key, JSON.stringify(carts));
+    } catch {
+      // ignore corrupt localStorage
+    }
+  }, [userId, order?.delivery_day]);
 
   const stillProcessing = order?.status === "pending_payment";
 

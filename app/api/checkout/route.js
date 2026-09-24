@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
 import { weekOfLabel } from "@/lib/format";
-import { CART_MAX } from "@/lib/constants";
 import { applyOptionsToMeal, optionsLabel } from "@/lib/mealOptions";
-import { isOrderingOpen } from "@/lib/orderWindow";
+import { isOrderingOpenFor, MENUS } from "@/lib/orderWindow";
 
 export async function POST(request) {
   const supabase = createClient();
@@ -13,13 +12,17 @@ export async function POST(request) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
-  if (!isOrderingOpen()) {
-    return NextResponse.json({ error: "Ordering is closed right now — it opens again Sunday." }, { status: 400 });
+  const { menuKey, items } = await request.json();
+  if (!MENUS[menuKey]) {
+    return NextResponse.json({ error: "Unknown menu." }, { status: 400 });
   }
 
-  const { items } = await request.json();
-  if (!Array.isArray(items) || items.length === 0 || items.length > CART_MAX) {
-    return NextResponse.json({ error: `Choose 1-${CART_MAX} meals.` }, { status: 400 });
+  if (!isOrderingOpenFor(menuKey)) {
+    return NextResponse.json({ error: `${MENUS[menuKey].label} ordering is closed right now.` }, { status: 400 });
+  }
+
+  if (!Array.isArray(items) || items.length === 0) {
+    return NextResponse.json({ error: "Choose at least 1 meal." }, { status: 400 });
   }
 
   const mealIds = items.map((it) => it.mealId);
@@ -32,6 +35,9 @@ export async function POST(request) {
 
   if (mealsError || !meals || meals.length !== mealIds.length) {
     return NextResponse.json({ error: "One or more meals could not be found." }, { status: 400 });
+  }
+  if (meals.some((m) => m.delivery_day !== menuKey)) {
+    return NextResponse.json({ error: "One or more meals don't belong to this menu." }, { status: 400 });
   }
   const mealById = Object.fromEntries(meals.map((m) => [m.id, m]));
 
@@ -70,6 +76,7 @@ export async function POST(request) {
     athlete_name: profile?.name,
     athlete_email: profile?.email,
     week_of: weekOf,
+    delivery_day: menuKey,
     status: "pending_payment",
     total,
   }).select().single();

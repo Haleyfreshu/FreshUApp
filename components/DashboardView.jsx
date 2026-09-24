@@ -13,7 +13,7 @@ import { BUDDY_STATES, fuelState, computeFuelScore } from "@/lib/fuel";
 import { addMinutes, minutesOfDay, timeStrFromMinutes, fmtTime } from "@/lib/format";
 import { computeMealMinutes, DEFAULT_MEAL_MINUTES } from "@/lib/schedule";
 import { optionsLabel } from "@/lib/mealOptions";
-import { civilDateStr } from "@/lib/orderWindow";
+import { civilDateStr, MENUS } from "@/lib/orderWindow";
 import { createClient } from "@/lib/supabase/client";
 
 export function DashboardView({ profile, todayLog, weeklyMeals, weekEatenMealIds, todayEvents }) {
@@ -194,15 +194,24 @@ export function DashboardView({ profile, todayLog, weeklyMeals, weekEatenMealIds
         <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 15, color: "var(--fu-text)", marginBottom: 10 }}>Quick Log</div>
         {weeklyMeals.length === 0 ? (
           <div style={{ background: "var(--fu-card)", borderRadius: 18, padding: "20px 16px", textAlign: "center", color: "var(--fu-text-muted)", fontSize: 13, boxShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>
-            No meals ordered for this week yet — order Sunday through Wednesday and they&apos;ll show up here.
+            No meals ordered yet — order Sunday-Wednesday for Monday delivery, or Wednesday-Sunday for Thursday delivery, and they&apos;ll show up here.
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {weeklyMeals.map(item => (
-              <MealCard key={item.id} meal={item} compact onEat={() => handleEatOrdered(item)}
-                eaten={eatenThisWeekIds.has(item.meal_id) || eatenTodayIds.has(item.meal_id) || pending === item.meal_id} />
-            ))}
-          </div>
+          Object.keys(MENUS).map((menuKey) => {
+            const items = weeklyMeals.filter((m) => m.menuKey === menuKey);
+            if (items.length === 0) return null;
+            return (
+              <div key={menuKey} style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--fu-text-muted)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>{MENUS[menuKey].label}</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {items.map(item => (
+                    <MealCard key={item.id} meal={item} compact onEat={() => handleEatOrdered(item)}
+                      eaten={eatenThisWeekIds.has(item.meal_id) || eatenTodayIds.has(item.meal_id) || pending === item.meal_id} />
+                  ))}
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
 

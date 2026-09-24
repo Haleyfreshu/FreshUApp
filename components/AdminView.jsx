@@ -8,10 +8,13 @@ import { FRESHU_LOGO } from "@/components/Shell";
 import { MealEditor } from "@/components/MealEditor";
 import { createClient } from "@/lib/supabase/client";
 import { optionsLabel } from "@/lib/mealOptions";
+import { MENUS } from "@/lib/orderWindow";
 
 export function AdminView({ initialMeals, athletes, orders }) {
   const router = useRouter();
   const [tab, setTab] = useState("meals");
+  const [mealMenuFilter, setMealMenuFilter] = useState("monday");
+  const [orderMenuFilter, setOrderMenuFilter] = useState("all");
   const [meals, setMeals] = useState(initialMeals);
   const [editing, setEditing] = useState(null); // null | 'new' | meal object
 
@@ -49,9 +52,9 @@ export function AdminView({ initialMeals, athletes, orders }) {
   };
 
   const exportCSV = () => {
-    const rows = [["Order ID", "Athlete", "Week Of", "Meal", "Customizations", "Calories", "Protein", "Carbs", "Fat", "Price"]];
+    const rows = [["Order ID", "Athlete", "Delivery", "Week Of", "Meal", "Customizations", "Calories", "Protein", "Carbs", "Fat", "Price"]];
     orders.forEach(o => o.items.forEach(it => {
-      rows.push([o.id, o.athlete_name || "Athlete", o.week_of, it.name, optionsLabel(it.selected_options || []), it.calories, it.protein, it.carbs, it.fat, it.price]);
+      rows.push([o.id, o.athlete_name || "Athlete", MENUS[o.delivery_day]?.label || o.delivery_day, o.week_of, it.name, optionsLabel(it.selected_options || []), it.calories, it.protein, it.carbs, it.fat, it.price]);
     }));
     const csv = rows.map(r => r.map(v => `"${v}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -102,14 +105,27 @@ export function AdminView({ initialMeals, athletes, orders }) {
       <div style={{ padding: "16px 16px 40px", maxWidth: 900, margin: "0 auto" }}>
         {tab === "meals" && (
           <>
+            <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+              {[["monday", "Monday Delivery"], ["thursday", "Thursday Delivery"]].map(([key, label]) => (
+                <button key={key} onClick={() => setMealMenuFilter(key)} style={{
+                  padding: "9px 14px", borderRadius: 12,
+                  border: mealMenuFilter === key ? "1.5px solid #2A3EFF" : "1.5px solid var(--fu-border)",
+                  background: mealMenuFilter === key ? "#2A3EFF" : "var(--fu-card)",
+                  color: mealMenuFilter === key ? "#fff" : "var(--fu-text)",
+                  fontWeight: 700, fontSize: 12.5, cursor: "pointer"
+                }}>
+                  {label}
+                </button>
+              ))}
+            </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <div style={{ fontSize: 13, color: "var(--fu-text-secondary)" }}>{meals.filter(m => m.is_active).length} meals on this week&apos;s menu{meals.some(m => !m.is_active) && ` · ${meals.filter(m => !m.is_active).length} archived`}</div>
+              <div style={{ fontSize: 13, color: "var(--fu-text-secondary)" }}>{meals.filter(m => m.is_active && m.delivery_day === mealMenuFilter).length} meals on this menu{meals.some(m => !m.is_active && m.delivery_day === mealMenuFilter) && ` · ${meals.filter(m => !m.is_active && m.delivery_day === mealMenuFilter).length} archived`}</div>
               <button onClick={() => setEditing("new")} style={{ display: "flex", alignItems: "center", gap: 6, background: "#2A3EFF", border: "none", borderRadius: 12, padding: "9px 14px", color: "#fff", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>
                 <Upload size={14} /> Add meal
               </button>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 12 }}>
-              {meals.map(m => (
+              {meals.filter(m => m.delivery_day === mealMenuFilter).map(m => (
                 <div key={m.id} style={{ background: "var(--fu-card)", borderRadius: 18, padding: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.3)", opacity: m.is_active ? 1 : 0.55 }}>
                   <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                     <div style={{ width: 44, height: 44, borderRadius: 12, background: `${m.color}1a`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, overflow: "hidden" }}>
@@ -166,17 +182,30 @@ export function AdminView({ initialMeals, athletes, orders }) {
 
         {tab === "orders" && (
           <>
+            <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+              {[["all", "All"], ["monday", "Monday Delivery"], ["thursday", "Thursday Delivery"]].map(([key, label]) => (
+                <button key={key} onClick={() => setOrderMenuFilter(key)} style={{
+                  padding: "9px 14px", borderRadius: 12,
+                  border: orderMenuFilter === key ? "1.5px solid #2A3EFF" : "1.5px solid var(--fu-border)",
+                  background: orderMenuFilter === key ? "#2A3EFF" : "var(--fu-card)",
+                  color: orderMenuFilter === key ? "#fff" : "var(--fu-text)",
+                  fontWeight: 700, fontSize: 12.5, cursor: "pointer"
+                }}>
+                  {label}
+                </button>
+              ))}
+            </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <div style={{ fontSize: 13, color: "var(--fu-text-secondary)" }}>{orders.length} total orders</div>
+              <div style={{ fontSize: 13, color: "var(--fu-text-secondary)" }}>{orders.filter(o => orderMenuFilter === "all" || o.delivery_day === orderMenuFilter).length} orders</div>
               <button onClick={exportCSV} style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--fu-cta-bg)", border: "none", borderRadius: 12, padding: "9px 14px", color: "var(--fu-cta-text)", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>
                 <Download size={14} /> Export for Well Fed
               </button>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {orders.map(o => (
+              {orders.filter(o => orderMenuFilter === "all" || o.delivery_day === orderMenuFilter).map(o => (
                 <div key={o.id} style={{ background: "var(--fu-card)", borderRadius: 16, padding: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--fu-text)" }}>{o.athlete_name || "Athlete"} · Week of {o.week_of}</div>
+                    <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--fu-text)" }}>{o.athlete_name || "Athlete"} · {MENUS[o.delivery_day]?.label || "Order"} · Week of {o.week_of}</div>
                     <span style={{ fontSize: 11, fontWeight: 800, color: "var(--fu-text-secondary)" }}>{o.status}</span>
                   </div>
                   <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)", marginTop: 4 }}>
@@ -191,7 +220,7 @@ export function AdminView({ initialMeals, athletes, orders }) {
       </div>
 
       {editing && (
-        <MealEditor meal={editing === "new" ? null : editing} onCancel={() => setEditing(null)} onSaved={handleSaved} />
+        <MealEditor meal={editing === "new" ? null : editing} defaultDeliveryDay={mealMenuFilter} onCancel={() => setEditing(null)} onSaved={handleSaved} />
       )}
     </div>
   );

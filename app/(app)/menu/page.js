@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { MenuView } from "@/components/MenuView";
-import { isOrderingOpen, civilDateStr } from "@/lib/orderWindow";
+import { isOrderingOpenFor, civilDateStr, MENU_KEYS } from "@/lib/orderWindow";
 
 export default async function MenuPage() {
   const supabase = createClient();
@@ -12,5 +12,7 @@ export default async function MenuPage() {
     supabase.from("daily_logs").select("meal_id").eq("athlete_id", user.id).eq("log_date", today),
   ]);
 
-  return <MenuView meals={meals || []} eatenMealIds={(todayLog || []).map(l => l.meal_id)} orderingOpen={isOrderingOpen()} />;
+  const orderingOpenFor = Object.fromEntries(MENU_KEYS.map((k) => [k, isOrderingOpenFor(k)]));
+
+  return <MenuView meals={meals || []} eatenMealIds={(todayLog || []).map(l => l.meal_id)} orderingOpenFor={orderingOpenFor} />;
 }

@@ -2,14 +2,14 @@
 
 import { Shell } from "@/components/Shell";
 import { BottomNav } from "@/components/BottomNav";
-import { CartProvider, useCart } from "@/lib/cartContext";
+import { CartProvider, useCartCounts } from "@/lib/cartContext";
 
 function AppShellInner({ children }) {
-  const { cart } = useCart();
+  const { total } = useCartCounts();
   return (
     <Shell>
       <div style={{ flex: 1, overflowY: "auto", paddingBottom: "calc(70px + env(safe-area-inset-bottom, 0px))" }}>{children}</div>
-      <BottomNav cartCount={cart.length} />
+      <BottomNav cartCount={total} />
     </Shell>
   );
 }

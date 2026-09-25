@@ -194,7 +194,7 @@ export function DashboardView({ profile, todayLog, weeklyMeals, weekEatenMealIds
         <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 15, color: "var(--fu-text)", marginBottom: 10 }}>Quick Log</div>
         {weeklyMeals.length === 0 ? (
           <div style={{ background: "var(--fu-card)", borderRadius: 18, padding: "20px 16px", textAlign: "center", color: "var(--fu-text-muted)", fontSize: 13, boxShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>
-            No meals ordered yet — order Sunday-Wednesday for Monday delivery, or Wednesday-Sunday for Thursday delivery, and they&apos;ll show up here.
+            No meals ordered yet — order Sunday-Wednesday for Monday delivery, or any day the week before for Thursday delivery, and they&apos;ll show up here.
           </div>
         ) : (
           Object.keys(MENUS).map((menuKey) => {

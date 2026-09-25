@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DashboardView } from "@/components/DashboardView";
 import { civilDateStr, currentDayAbbrev, activeConsumptionWeekFor, activeOrderWindowFor, MENU_KEYS } from "@/lib/orderWindow";
 
-const ORDER_LOOKBACK_DAYS = 16; // generous superset; exact filtering happens by civil date below
+const ORDER_LOOKBACK_DAYS = 20; // generous superset; exact filtering happens by civil date below
 
 export default async function DashboardPage() {
   const supabase = createClient();

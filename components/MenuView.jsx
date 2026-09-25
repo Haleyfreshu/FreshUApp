@@ -10,8 +10,8 @@ import { createClient } from "@/lib/supabase/client";
 import { applyOptionsToMeal, optionsLabel } from "@/lib/mealOptions";
 import { civilDateStr, MENUS } from "@/lib/orderWindow";
 
-const MENU_WINDOW_LABEL = { monday: "Sunday through Wednesday", thursday: "Wednesday through Sunday" };
-const MENU_NEXT_OPEN_LABEL = { monday: "Sunday", thursday: "Wednesday" };
+const MENU_WINDOW_LABEL = { monday: "Sunday through Wednesday", thursday: "Sunday through the following Sunday, the week before delivery" };
+const MENU_NEXT_OPEN_LABEL = { monday: "Sunday", thursday: "Sunday" };
 
 export function MenuView({ meals, eatenMealIds, orderingOpenFor }) {
   const router = useRouter();

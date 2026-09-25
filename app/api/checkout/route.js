@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
 import { weekOfLabel } from "@/lib/format";
 import { applyOptionsToMeal, optionsLabel } from "@/lib/mealOptions";
-import { isOrderingOpenFor, MENUS } from "@/lib/orderWindow";
+import { isOrderingOpenFor, MENUS, mealIsOnMenu } from "@/lib/orderWindow";
 
 export async function POST(request) {
   const supabase = createClient();
@@ -36,7 +36,7 @@ export async function POST(request) {
   if (mealsError || !meals || meals.length !== mealIds.length) {
     return NextResponse.json({ error: "One or more meals could not be found." }, { status: 400 });
   }
-  if (meals.some((m) => m.delivery_day !== menuKey)) {
+  if (meals.some((m) => !mealIsOnMenu(m, menuKey))) {
     return NextResponse.json({ error: "One or more meals don't belong to this menu." }, { status: 400 });
   }
   const mealById = Object.fromEntries(meals.map((m) => [m.id, m]));

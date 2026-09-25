@@ -8,7 +8,7 @@ import { FRESHU_LOGO } from "@/components/Shell";
 import { MealEditor } from "@/components/MealEditor";
 import { createClient } from "@/lib/supabase/client";
 import { optionsLabel } from "@/lib/mealOptions";
-import { MENUS } from "@/lib/orderWindow";
+import { MENUS, mealIsOnMenu } from "@/lib/orderWindow";
 
 export function AdminView({ initialMeals, athletes, orders }) {
   const router = useRouter();
@@ -119,13 +119,13 @@ export function AdminView({ initialMeals, athletes, orders }) {
               ))}
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <div style={{ fontSize: 13, color: "var(--fu-text-secondary)" }}>{meals.filter(m => m.is_active && m.delivery_day === mealMenuFilter).length} meals on this menu{meals.some(m => !m.is_active && m.delivery_day === mealMenuFilter) && ` · ${meals.filter(m => !m.is_active && m.delivery_day === mealMenuFilter).length} archived`}</div>
+              <div style={{ fontSize: 13, color: "var(--fu-text-secondary)" }}>{meals.filter(m => m.is_active && mealIsOnMenu(m, mealMenuFilter)).length} meals on this menu{meals.some(m => !m.is_active && mealIsOnMenu(m, mealMenuFilter)) && ` · ${meals.filter(m => !m.is_active && mealIsOnMenu(m, mealMenuFilter)).length} archived`}</div>
               <button onClick={() => setEditing("new")} style={{ display: "flex", alignItems: "center", gap: 6, background: "#2A3EFF", border: "none", borderRadius: 12, padding: "9px 14px", color: "#fff", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>
                 <Upload size={14} /> Add meal
               </button>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 12 }}>
-              {meals.filter(m => m.delivery_day === mealMenuFilter).map(m => (
+              {meals.filter(m => mealIsOnMenu(m, mealMenuFilter)).map(m => (
                 <div key={m.id} style={{ background: "var(--fu-card)", borderRadius: 18, padding: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.3)", opacity: m.is_active ? 1 : 0.55 }}>
                   <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                     <div style={{ width: 44, height: 44, borderRadius: 12, background: `${m.color}1a`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, overflow: "hidden" }}>
@@ -138,6 +138,7 @@ export function AdminView({ initialMeals, athletes, orders }) {
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--fu-text)" }}>{m.name}</div>
                         {!m.is_active && <Tag label="Archived" />}
+                        {m.on_monday_menu && m.on_thursday_menu && <Tag label="Both menus" />}
                       </div>
                       <div style={{ fontSize: 11, color: "var(--fu-text-muted)" }}>{m.category} · ${Number(m.price).toFixed(2)}</div>
                     </div>

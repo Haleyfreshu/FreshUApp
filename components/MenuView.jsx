@@ -8,7 +8,7 @@ import { MealOptionsModal } from "@/components/MealOptionsModal";
 import { useCart } from "@/lib/cartContext";
 import { createClient } from "@/lib/supabase/client";
 import { applyOptionsToMeal, optionsLabel } from "@/lib/mealOptions";
-import { civilDateStr, MENUS } from "@/lib/orderWindow";
+import { civilDateStr, MENUS, mealIsOnMenu } from "@/lib/orderWindow";
 
 const MENU_WINDOW_LABEL = { monday: "Sunday through Wednesday", thursday: "Sunday through the following Sunday, the week before delivery" };
 const MENU_NEXT_OPEN_LABEL = { monday: "Sunday", thursday: "Sunday" };
@@ -28,7 +28,7 @@ export function MenuView({ meals, eatenMealIds, orderingOpenFor }) {
   const [customizing, setCustomizing] = useState(null); // { meal, mode: 'add' | 'eat' }
 
   const orderingOpen = orderingOpenFor[activeMenu];
-  const menuMeals = meals.filter(m => m.delivery_day === activeMenu);
+  const menuMeals = meals.filter(m => mealIsOnMenu(m, activeMenu));
   const filtered = menuMeals.filter(m =>
     m.name.toLowerCase().includes(query.toLowerCase()) || m.category.toLowerCase().includes(query.toLowerCase())
   );

@@ -13,9 +13,10 @@ import { civilDateStr, MENUS, mealIsOnMenu } from "@/lib/orderWindow";
 const MENU_WINDOW_LABEL = { monday: "Sunday through Wednesday", thursday: "Sunday through the following Sunday, the week before delivery" };
 const MENU_NEXT_OPEN_LABEL = { monday: "Sunday", thursday: "Sunday" };
 
-export function MenuView({ meals, eatenMealIds, orderingOpenFor }) {
+export function MenuView({ meals, eatenMealIds, orderingOpenFor, initialMenu }) {
   const router = useRouter();
   const [activeMenu, setActiveMenu] = useState(
+    initialMenu && MENUS[initialMenu] ? initialMenu :
     orderingOpenFor.monday && !orderingOpenFor.thursday ? "monday" :
     orderingOpenFor.thursday && !orderingOpenFor.monday ? "thursday" : "monday"
   );
@@ -145,7 +146,8 @@ export function MenuView({ meals, eatenMealIds, orderingOpenFor }) {
             {items.map(m => (
               <MealCard key={m.id} meal={m}
                 onEat={() => handleEat(m)} eaten={eatenSet.has(m.id) || pending === m.id}
-                onAdd={handleAdd} inCart={cartIds.has(m.id)} cartFull={!orderingOpen} />
+                onAdd={handleAdd} inCart={cartIds.has(m.id)} cartFull={!orderingOpen}
+                onOpen={() => router.push(`/menu/${m.id}?menu=${activeMenu}`)} />
             ))}
           </div>
         </div>

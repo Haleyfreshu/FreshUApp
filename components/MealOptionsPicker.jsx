@@ -17,7 +17,9 @@ export function useMealOptionsSelection(meal) {
     return initial;
   });
 
-  const pickSingle = (groupId, optionId) => setSelections(s => ({ ...s, [groupId]: optionId }));
+  const pickSingle = (groupId, optionId) => setSelections(s => ({
+    ...s, [groupId]: s[groupId] === optionId ? null : optionId,
+  }));
   const toggleMulti = (groupId, optionId) => setSelections(s => {
     const current = s[groupId] || [];
     const next = current.includes(optionId) ? current.filter(id => id !== optionId) : [...current, optionId];

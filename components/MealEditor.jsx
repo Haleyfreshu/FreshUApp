@@ -139,7 +139,12 @@ export function MealEditor({ meal, defaultDeliveryDay, onCancel, onSaved }) {
         </button>
 
         {currentMeal?.id ? (
-          <MealOptionsEditor mealId={currentMeal.id} groups={groups} onGroupsChange={handleGroupsChange} />
+          <MealOptionsEditor
+            mealId={currentMeal.id}
+            mealMacros={{ calories: currentMeal.calories, protein: currentMeal.protein, carbs: currentMeal.carbs, fat: currentMeal.fat }}
+            groups={groups}
+            onGroupsChange={handleGroupsChange}
+          />
         ) : (
           <div style={{ fontSize: 12, color: "var(--fu-text-muted)", textAlign: "center", padding: "8px 0" }}>
             Save this meal first to add customization options (extra protein, choose your carb, etc.).

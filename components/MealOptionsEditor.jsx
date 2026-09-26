@@ -4,12 +4,21 @@ import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { SmallField } from "@/components/Fields";
 import { createClient } from "@/lib/supabase/client";
+import { optionMacroSummary } from "@/lib/mealOptions";
 
-export function MealOptionsEditor({ mealId, groups, onGroupsChange }) {
+export function MealOptionsEditor({ mealId, mealMacros, groups, onGroupsChange }) {
   const [newGroup, setNewGroup] = useState({ name: "", selection_type: "single", required: true });
-  const [newOption, setNewOption] = useState({}); // keyed by group id -> { label, price_delta, calories_delta, protein_delta, carbs_delta, fat_delta }
+  const [newOption, setNewOption] = useState({}); // keyed by group id -> { label, price_delta, calories, protein, carbs, fat }
 
   const sorted = [...groups].sort((a, b) => a.sort_order - b.sort_order);
+
+  // A fresh option starts at the meal's own macros — staff adjusts from
+  // there instead of typing a whole profile from scratch.
+  const fieldValue = (groupId, field) => {
+    const entered = newOption[groupId]?.[field];
+    if (entered !== undefined) return entered;
+    return field === "price_delta" ? "" : String(mealMacros[field] ?? "");
+  };
 
   const addGroup = async () => {
     if (!newGroup.name.trim()) return;
@@ -39,10 +48,10 @@ export function MealOptionsEditor({ mealId, groups, onGroupsChange }) {
     const { data, error } = await supabase.from("meal_options").insert({
       group_id: groupId, label: form.label.trim(),
       price_delta: Number(form.price_delta) || 0,
-      calories_delta: Number(form.calories_delta) || 0,
-      protein_delta: Number(form.protein_delta) || 0,
-      carbs_delta: Number(form.carbs_delta) || 0,
-      fat_delta: Number(form.fat_delta) || 0,
+      calories: Number(fieldValue(groupId, "calories")) || 0,
+      protein: Number(fieldValue(groupId, "protein")) || 0,
+      carbs: Number(fieldValue(groupId, "carbs")) || 0,
+      fat: Number(fieldValue(groupId, "fat")) || 0,
       sort_order: group.meal_options.length,
     }).select().single();
     if (!error) {
@@ -66,6 +75,9 @@ export function MealOptionsEditor({ mealId, groups, onGroupsChange }) {
   return (
     <div style={{ marginTop: 4, marginBottom: 12 }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: "var(--fu-text-muted)", marginBottom: 8 }}>Customization options</div>
+      <div style={{ fontSize: 11, color: "var(--fu-text-muted)", marginBottom: 8, lineHeight: 1.4 }}>
+        An option&apos;s macros are the meal&apos;s full totals when it&apos;s picked (not added to the base) — price still adds on top.
+      </div>
 
       {sorted.map(group => (
         <div key={group.id} style={{ background: "var(--fu-card-alt)", borderRadius: 12, padding: 12, marginBottom: 10 }}>
@@ -83,8 +95,8 @@ export function MealOptionsEditor({ mealId, groups, onGroupsChange }) {
               <span style={{ fontSize: 12.5, color: "var(--fu-text)" }}>{o.label}</span>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 11.5, color: "var(--fu-text-secondary)" }}>
-                  {Number(o.price_delta) !== 0 && `${Number(o.price_delta) > 0 ? "+" : ""}$${Number(o.price_delta).toFixed(2)} `}
-                  {Number(o.calories_delta) !== 0 && `${Number(o.calories_delta) > 0 ? "+" : ""}${o.calories_delta}cal`}
+                  {Number(o.price_delta) !== 0 && `${Number(o.price_delta) > 0 ? "+" : ""}$${Number(o.price_delta).toFixed(2)} · `}
+                  {optionMacroSummary(o)}
                 </span>
                 <button onClick={() => deleteOption(group.id, o.id)} type="button" style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}>
                   <Trash2 size={12} color="#FF5A5F" />
@@ -95,14 +107,14 @@ export function MealOptionsEditor({ mealId, groups, onGroupsChange }) {
 
           <div style={{ marginTop: 8 }}>
             <div style={{ display: "flex", gap: 6 }}>
-              <SmallField label="Option label" value={newOption[group.id]?.label || ""} onChange={e => setOptionField(group.id, "label", e.target.value)} placeholder="e.g. Extra protein" />
-              <SmallField label="Price +/-" type="number" step="0.01" value={newOption[group.id]?.price_delta || ""} onChange={e => setOptionField(group.id, "price_delta", e.target.value)} placeholder="2.00" />
+              <SmallField label="Option label" value={newOption[group.id]?.label || ""} onChange={e => setOptionField(group.id, "label", e.target.value)} placeholder="e.g. High Protein" />
+              <SmallField label="Extra price" type="number" step="0.01" value={newOption[group.id]?.price_delta || ""} onChange={e => setOptionField(group.id, "price_delta", e.target.value)} placeholder="0.00" />
             </div>
             <div style={{ display: "flex", gap: 6 }}>
-              <SmallField label="Cal +/-" type="number" value={newOption[group.id]?.calories_delta || ""} onChange={e => setOptionField(group.id, "calories_delta", e.target.value)} placeholder="0" />
-              <SmallField label="Protein +/-" type="number" value={newOption[group.id]?.protein_delta || ""} onChange={e => setOptionField(group.id, "protein_delta", e.target.value)} placeholder="0" />
-              <SmallField label="Carbs +/-" type="number" value={newOption[group.id]?.carbs_delta || ""} onChange={e => setOptionField(group.id, "carbs_delta", e.target.value)} placeholder="0" />
-              <SmallField label="Fat +/-" type="number" value={newOption[group.id]?.fat_delta || ""} onChange={e => setOptionField(group.id, "fat_delta", e.target.value)} placeholder="0" />
+              <SmallField label="Calories" type="number" value={fieldValue(group.id, "calories")} onChange={e => setOptionField(group.id, "calories", e.target.value)} />
+              <SmallField label="Protein (g)" type="number" value={fieldValue(group.id, "protein")} onChange={e => setOptionField(group.id, "protein", e.target.value)} />
+              <SmallField label="Carbs (g)" type="number" value={fieldValue(group.id, "carbs")} onChange={e => setOptionField(group.id, "carbs", e.target.value)} />
+              <SmallField label="Fat (g)" type="number" value={fieldValue(group.id, "fat")} onChange={e => setOptionField(group.id, "fat", e.target.value)} />
             </div>
             <button onClick={() => addOption(group.id)} type="button" style={{
               display: "flex", alignItems: "center", gap: 4, background: "none", border: "none",

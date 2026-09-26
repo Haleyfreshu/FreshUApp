@@ -6,14 +6,13 @@ import { X, Trash2, ShoppingBag, Search } from "lucide-react";
 import { MealCard } from "@/components/MealCard";
 import { MealOptionsModal } from "@/components/MealOptionsModal";
 import { useCart } from "@/lib/cartContext";
-import { createClient } from "@/lib/supabase/client";
 import { applyOptionsToMeal, optionsLabel } from "@/lib/mealOptions";
-import { civilDateStr, MENUS, mealIsOnMenu } from "@/lib/orderWindow";
+import { MENUS, mealIsOnMenu } from "@/lib/orderWindow";
 
 const MENU_WINDOW_LABEL = { monday: "Sunday through Wednesday", thursday: "Sunday through the following Sunday, the week before delivery" };
 const MENU_NEXT_OPEN_LABEL = { monday: "Sunday", thursday: "Sunday" };
 
-export function MenuView({ meals, eatenMealIds, orderingOpenFor, initialMenu }) {
+export function MenuView({ meals, orderingOpenFor, initialMenu }) {
   const router = useRouter();
   const [activeMenu, setActiveMenu] = useState(
     initialMenu && MENUS[initialMenu] ? initialMenu :
@@ -25,8 +24,7 @@ export function MenuView({ meals, eatenMealIds, orderingOpenFor, initialMenu }) 
   const [showCart, setShowCart] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
   const [error, setError] = useState("");
-  const [pending, setPending] = useState(null);
-  const [customizing, setCustomizing] = useState(null); // { meal, mode: 'add' | 'eat' }
+  const [customizing, setCustomizing] = useState(null); // meal | null
 
   const orderingOpen = orderingOpenFor[activeMenu];
   const menuMeals = meals.filter(m => mealIsOnMenu(m, activeMenu));
@@ -34,38 +32,12 @@ export function MenuView({ meals, eatenMealIds, orderingOpenFor, initialMenu }) 
     m.name.toLowerCase().includes(query.toLowerCase()) || m.category.toLowerCase().includes(query.toLowerCase())
   );
   const grouped = [...new Set(filtered.map(m => m.category))].map(cat => [cat, filtered.filter(m => m.category === cat)]);
-  const eatenSet = new Set(eatenMealIds);
   const cartIds = new Set(cart.map(c => c.id));
   const total = cart.reduce((s, m) => s + applyOptionsToMeal(m, m.selectedOptions || []).price, 0);
 
-  const logMeal = async (meal, selectedOptions) => {
-    setPending(meal.id);
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    const totals = applyOptionsToMeal(meal, selectedOptions);
-    await supabase.from("daily_logs").upsert({
-      athlete_id: user.id,
-      meal_id: meal.id,
-      log_date: civilDateStr(),
-      name: meal.name, emoji: meal.emoji,
-      calories: totals.calories, protein: totals.protein, carbs: totals.carbs, fat: totals.fat,
-      selected_options: selectedOptions.map(o => ({ id: o.id, label: o.label })),
-    }, { onConflict: "athlete_id,meal_id,log_date" });
-    setPending(null);
-    router.refresh();
-  };
-
-  const handleEat = (meal) => {
-    if (meal.meal_option_groups?.length) {
-      setCustomizing({ meal, mode: "eat" });
-    } else {
-      logMeal(meal, []);
-    }
-  };
-
   const handleAdd = (meal) => {
     if (meal.meal_option_groups?.length) {
-      setCustomizing({ meal, mode: "add" });
+      setCustomizing(meal);
     } else {
       addToCart(meal, []);
     }
@@ -145,7 +117,6 @@ export function MenuView({ meals, eatenMealIds, orderingOpenFor, initialMenu }) 
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {items.map(m => (
               <MealCard key={m.id} meal={m}
-                onEat={() => handleEat(m)} eaten={eatenSet.has(m.id) || pending === m.id}
                 onAdd={handleAdd} inCart={cartIds.has(m.id)} cartFull={!orderingOpen}
                 onOpen={() => router.push(`/menu/${m.id}?menu=${activeMenu}`)} />
             ))}
@@ -197,15 +168,11 @@ export function MenuView({ meals, eatenMealIds, orderingOpenFor, initialMenu }) 
 
       {customizing && (
         <MealOptionsModal
-          meal={customizing.meal}
-          actionLabel={customizing.mode === "add" ? "Add to cart" : "Log this"}
+          meal={customizing}
+          actionLabel="Add to cart"
           onCancel={() => setCustomizing(null)}
           onConfirm={(selectedOptions) => {
-            if (customizing.mode === "add") {
-              addToCart(customizing.meal, selectedOptions);
-            } else {
-              logMeal(customizing.meal, selectedOptions);
-            }
+            addToCart(customizing, selectedOptions);
             setCustomizing(null);
           }}
         />

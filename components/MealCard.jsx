@@ -38,16 +38,18 @@ export function MealCard({ meal, onEat, eaten, onAdd, inCart, cartFull, compact,
         </div>
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-        <button onClick={() => onEat(meal)} disabled={eaten}
-          style={{
-            flex: 1, padding: "9px 10px", borderRadius: 12,
-            border: eaten ? "1.5px solid var(--fu-border)" : "1.5px solid transparent",
-            background: eaten ? "var(--fu-card-alt)" : "var(--fu-cta-bg)", color: eaten ? "var(--fu-text-muted)" : "var(--fu-cta-text)",
-            fontWeight: 700, fontSize: 12.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-            cursor: eaten ? "default" : "pointer"
-          }}>
-          {eaten ? <><Check size={14} /> Logged</> : <><Sparkles size={14} /> I Ate This</>}
-        </button>
+        {onEat && (
+          <button onClick={() => onEat(meal)} disabled={eaten}
+            style={{
+              flex: 1, padding: "9px 10px", borderRadius: 12,
+              border: eaten ? "1.5px solid var(--fu-border)" : "1.5px solid transparent",
+              background: eaten ? "var(--fu-card-alt)" : "var(--fu-cta-bg)", color: eaten ? "var(--fu-text-muted)" : "var(--fu-cta-text)",
+              fontWeight: 700, fontSize: 12.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              cursor: eaten ? "default" : "pointer"
+            }}>
+            {eaten ? <><Check size={14} /> Logged</> : <><Sparkles size={14} /> I Ate This</>}
+          </button>
+        )}
         {onAdd && (
           <button onClick={() => onAdd(meal)} disabled={inCart || cartFull}
             style={{

@@ -2,53 +2,26 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Sparkles, Plus } from "lucide-react";
+import { Check, Plus } from "lucide-react";
 import { TopBar } from "@/components/Shell";
 import { Tag } from "@/components/MealCard";
 import { MealOptionsModal } from "@/components/MealOptionsModal";
 import { useCart } from "@/lib/cartContext";
-import { createClient } from "@/lib/supabase/client";
-import { applyOptionsToMeal } from "@/lib/mealOptions";
-import { civilDateStr, MENUS } from "@/lib/orderWindow";
+import { MENUS } from "@/lib/orderWindow";
 
-export function MealDetailView({ meal, initialMenu, orderingOpenFor, eaten: initialEaten }) {
+export function MealDetailView({ meal, initialMenu, orderingOpenFor }) {
   const router = useRouter();
   const bothMenus = meal.on_monday_menu && meal.on_thursday_menu;
   const [menuKey, setMenuKey] = useState(initialMenu);
   const { cart, addToCart } = useCart(menuKey);
-  const [customizing, setCustomizing] = useState(null); // 'add' | 'eat' | null
-  const [pending, setPending] = useState(false);
-  const [eaten, setEaten] = useState(initialEaten);
+  const [customizing, setCustomizing] = useState(false);
 
   const orderingOpen = orderingOpenFor[menuKey];
   const inCart = cart.some(c => c.id === meal.id);
   const hasOptions = meal.meal_option_groups?.length > 0;
 
-  const logMeal = async (selectedOptions) => {
-    setPending(true);
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    const totals = applyOptionsToMeal(meal, selectedOptions);
-    await supabase.from("daily_logs").upsert({
-      athlete_id: user.id,
-      meal_id: meal.id,
-      log_date: civilDateStr(),
-      name: meal.name, emoji: meal.emoji,
-      calories: totals.calories, protein: totals.protein, carbs: totals.carbs, fat: totals.fat,
-      selected_options: selectedOptions.map(o => ({ id: o.id, label: o.label })),
-    }, { onConflict: "athlete_id,meal_id,log_date" });
-    setPending(false);
-    setEaten(true);
-    router.refresh();
-  };
-
-  const handleEat = () => {
-    if (hasOptions) setCustomizing("eat");
-    else logMeal([]);
-  };
-
   const handleAdd = () => {
-    if (hasOptions) setCustomizing("add");
+    if (hasOptions) setCustomizing(true);
     else addToCart(meal, []);
   };
 
@@ -103,45 +76,29 @@ export function MealDetailView({ meal, initialMenu, orderingOpenFor, eaten: init
 
         {!orderingOpen && (
           <div style={{ background: "#FFB64822", border: "1px solid #FFB64855", borderRadius: 14, padding: "12px 14px", marginTop: 16, fontSize: 13, color: "var(--fu-text)", lineHeight: 1.4 }}>
-            {MENUS[menuKey].label} ordering is closed right now — you can still log it below if you already have it.
+            {MENUS[menuKey].label} ordering is closed right now.
           </div>
         )}
 
-        <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-          <button onClick={handleEat} disabled={eaten || pending}
-            style={{
-              flex: 1, padding: "13px 10px", borderRadius: 14,
-              border: eaten ? "1.5px solid var(--fu-border)" : "1.5px solid transparent",
-              background: eaten ? "var(--fu-card-alt)" : "var(--fu-cta-bg)", color: eaten ? "var(--fu-text-muted)" : "var(--fu-cta-text)",
-              fontWeight: 800, fontSize: 13.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-              cursor: eaten ? "default" : "pointer"
-            }}>
-            {eaten ? <><Check size={16} /> Logged</> : <><Sparkles size={16} /> I Ate This</>}
-          </button>
-          <button onClick={handleAdd} disabled={inCart || !orderingOpen}
-            style={{
-              flex: 1, padding: "13px 10px", borderRadius: 14, border: "1.5px solid #2A3EFF",
-              background: inCart ? "#2A3EFF" : "var(--fu-cta-bg)", color: inCart ? "#fff" : "#2A3EFF",
-              fontWeight: 800, fontSize: 13.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-              cursor: !orderingOpen && !inCart ? "not-allowed" : "pointer", opacity: !orderingOpen && !inCart ? 0.5 : 1
-            }}>
-            {inCart ? <><Check size={16} /> In Cart</> : <><Plus size={16} /> Add to Cart</>}
-          </button>
-        </div>
+        <button onClick={handleAdd} disabled={inCart || !orderingOpen}
+          style={{
+            width: "100%", marginTop: 20, padding: "13px 10px", borderRadius: 14, border: "1.5px solid #2A3EFF",
+            background: inCart ? "#2A3EFF" : "var(--fu-cta-bg)", color: inCart ? "#fff" : "#2A3EFF",
+            fontWeight: 800, fontSize: 13.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            cursor: !orderingOpen && !inCart ? "not-allowed" : "pointer", opacity: !orderingOpen && !inCart ? 0.5 : 1
+          }}>
+          {inCart ? <><Check size={16} /> In Cart</> : <><Plus size={16} /> Add to Cart</>}
+        </button>
       </div>
 
       {customizing && (
         <MealOptionsModal
           meal={meal}
-          actionLabel={customizing === "add" ? "Add to cart" : "Log this"}
-          onCancel={() => setCustomizing(null)}
+          actionLabel="Add to cart"
+          onCancel={() => setCustomizing(false)}
           onConfirm={(selectedOptions) => {
-            if (customizing === "add") {
-              addToCart(meal, selectedOptions);
-            } else {
-              logMeal(selectedOptions);
-            }
-            setCustomizing(null);
+            addToCart(meal, selectedOptions);
+            setCustomizing(false);
           }}
         />
       )}

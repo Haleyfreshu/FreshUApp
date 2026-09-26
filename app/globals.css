@@ -2,13 +2,13 @@
 
 :root {
   --fu-bg: #000000;
-  --fu-card: #141414;
-  --fu-card-alt: #1C1C1C;
+  --fu-card: #121212;
+  --fu-card-alt: #1E1E1E;
   --fu-text: #FFFFFF;
-  --fu-text-secondary: #A8A8A8;
-  --fu-text-muted: #6B6B6B;
-  --fu-label: #B0B0B0;
-  --fu-border: #333333;
+  --fu-text-secondary: rgba(255, 255, 255, 0.68);
+  --fu-text-muted: rgba(255, 255, 255, 0.42);
+  --fu-label: rgba(255, 255, 255, 0.58);
+  --fu-border: rgba(255, 255, 255, 0.16);
   --fu-danger-bg: #2C1620;
   --fu-cta-bg: #FFFFFF;
   --fu-cta-text: #000000;

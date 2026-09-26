@@ -51,8 +51,8 @@ export function LoginForm() {
     <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "60px 26px 30px", justifyContent: "space-between" }}>
       <div>
         <Logo height={40} />
-        <div style={{ marginTop: 34, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 27, color: "var(--fu-text)", lineHeight: 1.2 }}>
-          Fuel your <span style={{ color: "#2A3EFF" }}>performance.</span>
+        <div style={{ marginTop: 34, fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 27, color: "var(--fu-text)", lineHeight: 1.2 }}>
+          Fuel your performance.
         </div>
         <div style={{ fontSize: 14, color: "var(--fu-text-secondary)", marginTop: 8 }}>Log in to track your nutrition and order this week&apos;s meals.</div>
 
@@ -79,7 +79,7 @@ export function LoginForm() {
 
       <div>
         <div style={{ textAlign: "center", fontSize: 13.5, color: "var(--fu-text-secondary)" }}>
-          New to FreshU? <a href="/signup" style={{ background: "none", border: "none", color: "#2A3EFF", fontWeight: 800, cursor: "pointer", fontSize: 13.5, textDecoration: "none" }}>Create account</a>
+          New to FreshU? <a href="/signup" style={{ background: "none", border: "none", color: "#fff", fontWeight: 800, cursor: "pointer", fontSize: 13.5, textDecoration: "none" }}>Create account</a>
         </div>
         <a href="/staff/login" style={{ display: "block", margin: "14px auto 0", background: "none", border: "none", color: "var(--fu-text-muted)", fontSize: 12, cursor: "pointer", textAlign: "center", textDecoration: "none" }}>Staff login →</a>
       </div>

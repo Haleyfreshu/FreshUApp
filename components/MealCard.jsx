@@ -11,7 +11,7 @@ export function MealCard({ meal, onEat, eaten, onAdd, inCart, cartFull, compact,
     <div style={{ background: "var(--fu-card)", borderRadius: 20, padding: 14, boxShadow: "0 2px 14px rgba(0,0,0,0.35)" }}>
       <div onClick={onOpen} style={{ display: "flex", gap: 12, alignItems: compact ? "center" : "flex-start", cursor: onOpen ? "pointer" : "default" }}>
         <div style={{
-          width: 56, height: 56, borderRadius: 16, background: `${meal.color}1a`,
+          width: 56, height: 56, borderRadius: 16, background: "var(--fu-card-alt)",
           display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, flexShrink: 0,
           overflow: "hidden"
         }}>
@@ -26,7 +26,7 @@ export function MealCard({ meal, onEat, eaten, onAdd, inCart, cartFull, compact,
               <div style={{ fontWeight: 700, fontSize: 14.5, color: "var(--fu-text)", lineHeight: 1.25 }}>{meal.name}</div>
               <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)", marginTop: 2 }}>{meal.category}</div>
             </div>
-            <div style={{ fontWeight: 700, fontSize: 14, color: "#2A3EFF", whiteSpace: "nowrap" }}>${Number(meal.price).toFixed(2)}</div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: "var(--fu-text)", whiteSpace: "nowrap" }}>${Number(meal.price).toFixed(2)}</div>
           </div>
           {!compact && <div style={{ fontSize: 11.5, color: "var(--fu-text-secondary)", marginTop: 6, lineHeight: 1.4 }}>{meal.ingredients}</div>}
           <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
@@ -53,8 +53,8 @@ export function MealCard({ meal, onEat, eaten, onAdd, inCart, cartFull, compact,
         {onAdd && (
           <button onClick={() => onAdd(meal)} disabled={inCart || cartFull}
             style={{
-              flex: 1, padding: "9px 10px", borderRadius: 12, border: "1.5px solid #2A3EFF",
-              background: inCart ? "#2A3EFF" : "var(--fu-cta-bg)", color: inCart ? "#fff" : "#2A3EFF",
+              flex: 1, padding: "9px 10px", borderRadius: 12, border: inCart ? "1.5px solid var(--fu-cta-bg)" : "1.5px solid #fff",
+              background: inCart ? "var(--fu-cta-bg)" : "transparent", color: inCart ? "var(--fu-cta-text)" : "#fff",
               fontWeight: 700, fontSize: 12.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
               cursor: cartFull && !inCart ? "not-allowed" : "pointer", opacity: cartFull && !inCart ? 0.5 : 1
             }}>

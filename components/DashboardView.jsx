@@ -2,10 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Flame, Beef, Wheat, Droplet, Clock, Plus, Trash2 } from "lucide-react";
-import { Ring } from "@/components/Ring";
-import { FuelBuddy } from "@/components/FuelBuddy";
-import { MacroBar } from "@/components/MacroBar";
+import { Clock, Plus, Trash2 } from "lucide-react";
 import { MealCard, Tag } from "@/components/MealCard";
 import { FRESHU_LOGO } from "@/components/Shell";
 import { LogFoodModal } from "@/components/LogFoodModal";
@@ -98,7 +95,7 @@ export function DashboardView({ profile, todayLog, weeklyMeals, weekEatenMealIds
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <div style={{ fontSize: 13, color: "var(--fu-text-secondary)" }}>Welcome back,</div>
-          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 21, color: "var(--fu-text)" }}>{profile.name?.split(" ")[0] || "Athlete"}</div>
+          <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 21, color: "var(--fu-text)" }}>{profile.name?.split(" ")[0] || "Athlete"}</div>
         </div>
         <div style={{ height: 40, borderRadius: 12, background: "var(--fu-card)", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 10px" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -106,38 +103,45 @@ export function DashboardView({ profile, todayLog, weeklyMeals, weekEatenMealIds
         </div>
       </div>
 
-      <div style={{ background: "var(--fu-card)", borderRadius: 24, padding: "22px 16px", marginTop: 18, boxShadow: "0 4px 20px rgba(0,0,0,0.35)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 26, flexWrap: "wrap" }}>
-          <Ring size={168} stroke={14} progress={score} gradientId="fuelGrad" colors={["#2A3EFF", "#33D3A3"]}>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 42, color: "var(--fu-text)", lineHeight: 1 }}>{score}</div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--fu-text-muted)", letterSpacing: 1, marginTop: 2 }}>FUEL SCORE</div>
-            </div>
-          </Ring>
-          <FuelBuddy score={score} size={104} />
+      <div style={{ background: "var(--fu-cta-bg)", color: "var(--fu-cta-text)", borderRadius: 24, padding: "20px 20px 22px", marginTop: 18, boxShadow: "0 4px 20px rgba(0,0,0,0.35)" }}>
+        <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: 1, opacity: 0.6 }}>Fuel Score</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8, gap: 14 }}>
+          <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 62, lineHeight: 0.85, fontVariantNumeric: "tabular-nums" }}>{score}</div>
+          <span style={{
+            fontFamily: "'Baloo 2',sans-serif", fontWeight: 700, fontSize: 12.5, padding: "6px 13px",
+            borderRadius: 999, color: "#fff", background: state.color, whiteSpace: "nowrap"
+          }}>{state.label}</span>
         </div>
-        <div style={{
-          marginTop: 16, background: `${state.color}1f`, borderRadius: 14, padding: "12px 14px",
-          fontSize: 13, color: "var(--fu-text)", fontWeight: 600, textAlign: "center", lineHeight: 1.4
-        }}>
-          {state.msg}
-        </div>
+        <div style={{ fontSize: 13, marginTop: 12, lineHeight: 1.4, opacity: 0.7 }}>{state.msg}</div>
       </div>
 
-      <div style={{ background: "var(--fu-card)", borderRadius: 24, padding: "18px 18px 6px", marginTop: 16, boxShadow: "0 4px 20px rgba(0,0,0,0.35)" }}>
-        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 15, color: "var(--fu-text)", marginBottom: 14 }}>Today&apos;s Fuel</div>
-        <MacroBar icon={Flame} label="Calories" current={totals.calories} goal={profile.calorie_goal} unit="" color="#2A3EFF" />
-        <MacroBar icon={Beef} label="Protein" current={totals.protein} goal={profile.protein_goal} unit="g" color="#33D3A3" />
-        <MacroBar icon={Wheat} label="Carbs" current={totals.carbs} goal={profile.carb_goal} unit="g" color="#FFB648" />
-        <MacroBar icon={Droplet} label="Fat" current={totals.fat} goal={profile.fat_goal} unit="g" color="#8C93B8" />
+      <div style={{ background: "var(--fu-card)", borderRadius: 24, padding: "18px 18px 20px", marginTop: 16, boxShadow: "0 4px 20px rgba(0,0,0,0.35)" }}>
+        <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 15, color: "var(--fu-text)" }}>Today&apos;s Fuel</div>
+        <div style={{ height: 2.5, background: "#fff", margin: "12px 0 2px", borderRadius: 1 }} />
+        {[
+          ["Calories", totals.calories, profile.calorie_goal, ""],
+          ["Protein", totals.protein, profile.protein_goal, "g"],
+          ["Carbs", totals.carbs, profile.carb_goal, "g"],
+          ["Fat", totals.fat, profile.fat_goal, "g"],
+        ].map(([label, current, goal, unit], i, arr) => (
+          <div key={label}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "5px 0" }}>
+              <span style={{ fontSize: 12.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "var(--fu-text-muted)" }}>{label}</span>
+              <span style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 700, fontSize: 17, color: "var(--fu-text)", fontVariantNumeric: "tabular-nums" }}>
+                {current}{unit} <span style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 12.5, color: "var(--fu-text-muted)" }}>/ {goal}{unit}</span>
+              </span>
+            </div>
+            <div style={{ height: i === arr.length - 1 ? 2.5 : 1, background: i === arr.length - 1 ? "#fff" : "var(--fu-border)", margin: "9px 0", borderRadius: 1 }} />
+          </div>
+        ))}
       </div>
 
       <div style={{ marginTop: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 15, color: "var(--fu-text)" }}>Today&apos;s Log</div>
+          <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 15, color: "var(--fu-text)" }}>Today&apos;s Log</div>
           <button onClick={() => setShowLogFood(true)} style={{
-            display: "flex", alignItems: "center", gap: 6, background: "#2A3EFF", border: "none", borderRadius: 12,
-            padding: "8px 12px", color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer"
+            display: "flex", alignItems: "center", gap: 6, background: "var(--fu-cta-bg)", border: "none", borderRadius: 12,
+            padding: "8px 12px", color: "var(--fu-cta-text)", fontWeight: 700, fontSize: 12, cursor: "pointer"
           }}>
             <Plus size={13} /> Log food
           </button>
@@ -173,7 +177,7 @@ export function DashboardView({ profile, todayLog, weeklyMeals, weekEatenMealIds
       </div>
 
       <div style={{ marginTop: 20 }}>
-        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 15, color: "var(--fu-text)" }}>Your Fueling Schedule</div>
+        <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 15, color: "var(--fu-text)" }}>Your Fueling Schedule</div>
         {scheduleAdjusted && (
           <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)", marginTop: 2, marginBottom: 8 }}>Auto-adjusted around today&apos;s training</div>
         )}
@@ -181,7 +185,7 @@ export function DashboardView({ profile, todayLog, weeklyMeals, weekEatenMealIds
           {schedule.map((s, i) => (
             <div key={`${s.slot}-${s.minutes}`} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderBottom: i < schedule.length - 1 ? "1px solid var(--fu-border)" : "none" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <Clock size={15} color="#2A3EFF" />
+                <Clock size={15} color="var(--fu-text-muted)" />
                 <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--fu-text)" }}>{s.slot}</span>
               </div>
               <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--fu-text-secondary)" }}>{s.time}</span>
@@ -191,7 +195,7 @@ export function DashboardView({ profile, todayLog, weeklyMeals, weekEatenMealIds
       </div>
 
       <div style={{ marginTop: 20 }}>
-        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 15, color: "var(--fu-text)", marginBottom: 10 }}>Quick Log</div>
+        <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 15, color: "var(--fu-text)", marginBottom: 10 }}>Quick Log</div>
         {weeklyMeals.length === 0 ? (
           <div style={{ background: "var(--fu-card)", borderRadius: 18, padding: "20px 16px", textAlign: "center", color: "var(--fu-text-muted)", fontSize: 13, boxShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>
             No meals ordered yet — order Sunday-Wednesday for Monday delivery, or any day the week before for Thursday delivery, and they&apos;ll show up here.

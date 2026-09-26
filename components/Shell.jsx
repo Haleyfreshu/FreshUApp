@@ -29,7 +29,7 @@ export function TopBar({ title, right, onBack }) {
             <ArrowLeft size={20} color="var(--fu-text)" />
           </button>
         )}
-        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 20, color: "var(--fu-text)" }}>{title}</div>
+        <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 20, color: "var(--fu-text)" }}>{title}</div>
       </div>
       {right}
     </div>

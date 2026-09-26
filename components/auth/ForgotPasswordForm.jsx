@@ -33,7 +33,7 @@ export function ForgotPasswordForm() {
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "60px 26px 30px" }}>
       <Logo height={34} />
-      <div style={{ marginTop: 26, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 24, color: "var(--fu-text)" }}>Reset your password</div>
+      <div style={{ marginTop: 26, fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 24, color: "var(--fu-text)" }}>Reset your password</div>
 
       {sent ? (
         <div style={{ fontSize: 13.5, color: "var(--fu-text-secondary)", marginTop: 10, lineHeight: 1.5 }}>
@@ -55,7 +55,7 @@ export function ForgotPasswordForm() {
       )}
 
       <div style={{ textAlign: "center", fontSize: 13.5, color: "var(--fu-text-secondary)", marginTop: 16 }}>
-        <a href="/login" style={{ color: "#2A3EFF", fontWeight: 800, textDecoration: "none" }}>← Back to login</a>
+        <a href="/login" style={{ color: "#fff", fontWeight: 800, textDecoration: "none" }}>← Back to login</a>
       </div>
     </div>
   );

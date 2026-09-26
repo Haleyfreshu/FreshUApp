@@ -18,7 +18,7 @@ export default async function OrdersPage() {
 
   return (
     <div style={{ padding: "18px 20px 20px" }}>
-      <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 22, color: "var(--fu-text)" }}>Orders</div>
+      <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 22, color: "var(--fu-text)" }}>Orders</div>
 
       <div style={{ marginTop: 16 }}>
         <div style={{ fontWeight: 800, fontSize: 13, color: "var(--fu-label)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>Current</div>

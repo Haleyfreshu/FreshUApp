@@ -31,7 +31,7 @@ export function TrainingScheduleEditor({ events, onChange }) {
               <div style={{ fontSize: 13, fontWeight: 800, color: "var(--fu-text)" }}>{day}</div>
               <button onClick={() => addEvent(day)} type="button" style={{
                 display: "flex", alignItems: "center", gap: 4, background: "none", border: "none",
-                color: "#2A3EFF", fontWeight: 700, fontSize: 12, cursor: "pointer", padding: 4
+                color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", padding: 4
               }}>
                 <Plus size={13} /> Add
               </button>

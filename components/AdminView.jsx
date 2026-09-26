@@ -78,7 +78,7 @@ export function AdminView({ initialMeals, athletes, orders }) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={FRESHU_LOGO} alt="FreshU" style={{ height: 26, width: "auto", display: "block" }} />
           <span style={{
-            fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 11, color: "#33D3A3",
+            fontFamily: "'Baloo 2',sans-serif", fontWeight: 700, fontSize: 11, color: "#33D3A3",
             letterSpacing: 1, textTransform: "uppercase", background: "#33D3A31f", padding: "3px 8px", borderRadius: 6
           }}>Staff</span>
         </div>
@@ -109,9 +109,9 @@ export function AdminView({ initialMeals, athletes, orders }) {
               {[["monday", "Monday Delivery"], ["thursday", "Thursday Delivery"]].map(([key, label]) => (
                 <button key={key} onClick={() => setMealMenuFilter(key)} style={{
                   padding: "9px 14px", borderRadius: 12,
-                  border: mealMenuFilter === key ? "1.5px solid #2A3EFF" : "1.5px solid var(--fu-border)",
-                  background: mealMenuFilter === key ? "#2A3EFF" : "var(--fu-card)",
-                  color: mealMenuFilter === key ? "#fff" : "var(--fu-text)",
+                  border: mealMenuFilter === key ? "1.5px solid var(--fu-cta-bg)" : "1.5px solid var(--fu-border)",
+                  background: mealMenuFilter === key ? "var(--fu-cta-bg)" : "var(--fu-card)",
+                  color: mealMenuFilter === key ? "var(--fu-cta-text)" : "var(--fu-text)",
                   fontWeight: 700, fontSize: 12.5, cursor: "pointer"
                 }}>
                   {label}
@@ -120,7 +120,7 @@ export function AdminView({ initialMeals, athletes, orders }) {
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <div style={{ fontSize: 13, color: "var(--fu-text-secondary)" }}>{meals.filter(m => m.is_active && mealIsOnMenu(m, mealMenuFilter)).length} meals on this menu{meals.some(m => !m.is_active && mealIsOnMenu(m, mealMenuFilter)) && ` · ${meals.filter(m => !m.is_active && mealIsOnMenu(m, mealMenuFilter)).length} archived`}</div>
-              <button onClick={() => setEditing("new")} style={{ display: "flex", alignItems: "center", gap: 6, background: "#2A3EFF", border: "none", borderRadius: 12, padding: "9px 14px", color: "#fff", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>
+              <button onClick={() => setEditing("new")} style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--fu-cta-bg)", border: "none", borderRadius: 12, padding: "9px 14px", color: "var(--fu-cta-text)", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>
                 <Upload size={14} /> Add meal
               </button>
             </div>
@@ -128,7 +128,7 @@ export function AdminView({ initialMeals, athletes, orders }) {
               {meals.filter(m => mealIsOnMenu(m, mealMenuFilter)).map(m => (
                 <div key={m.id} style={{ background: "var(--fu-card)", borderRadius: 18, padding: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.3)", opacity: m.is_active ? 1 : 0.55 }}>
                   <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: `${m.color}1a`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, overflow: "hidden" }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 12, background: "var(--fu-card-alt)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, overflow: "hidden" }}>
                       {m.photo_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={m.photo_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -155,7 +155,7 @@ export function AdminView({ initialMeals, athletes, orders }) {
                         <Trash2 size={13} />
                       </button>
                     ) : (
-                      <button onClick={() => restoreMeal(m.id)} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px", borderRadius: 10, border: "1.5px solid #2A3EFF", background: "var(--fu-card-alt)", color: "#2A3EFF", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
+                      <button onClick={() => restoreMeal(m.id)} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px", borderRadius: 10, border: "1.5px solid #fff", background: "var(--fu-card-alt)", color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
                         Restore
                       </button>
                     )}
@@ -170,7 +170,7 @@ export function AdminView({ initialMeals, athletes, orders }) {
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {athletes.map(a => (
               <div key={a.id} style={{ background: "var(--fu-card)", borderRadius: 16, padding: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.3)", display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ width: 42, height: 42, borderRadius: "50%", background: "linear-gradient(135deg,#2A3EFF,#33D3A3)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800 }}>{(a.name || "A")[0]}</div>
+                <div style={{ width: 42, height: 42, borderRadius: "50%", background: "var(--fu-card-alt)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800 }}>{(a.name || "A")[0]}</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--fu-text)" }}>{a.name}</div>
                   <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)" }}>{a.school || "—"} · {a.sport || "—"}</div>
@@ -187,9 +187,9 @@ export function AdminView({ initialMeals, athletes, orders }) {
               {[["all", "All"], ["monday", "Monday Delivery"], ["thursday", "Thursday Delivery"]].map(([key, label]) => (
                 <button key={key} onClick={() => setOrderMenuFilter(key)} style={{
                   padding: "9px 14px", borderRadius: 12,
-                  border: orderMenuFilter === key ? "1.5px solid #2A3EFF" : "1.5px solid var(--fu-border)",
-                  background: orderMenuFilter === key ? "#2A3EFF" : "var(--fu-card)",
-                  color: orderMenuFilter === key ? "#fff" : "var(--fu-text)",
+                  border: orderMenuFilter === key ? "1.5px solid var(--fu-cta-bg)" : "1.5px solid var(--fu-border)",
+                  background: orderMenuFilter === key ? "var(--fu-cta-bg)" : "var(--fu-card)",
+                  color: orderMenuFilter === key ? "var(--fu-cta-text)" : "var(--fu-text)",
                   fontWeight: 700, fontSize: 12.5, cursor: "pointer"
                 }}>
                   {label}

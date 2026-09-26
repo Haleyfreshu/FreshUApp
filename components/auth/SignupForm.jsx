@@ -48,7 +48,7 @@ export function SignupForm() {
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "50px 26px 30px" }}>
       <Logo height={34} />
-      <div style={{ marginTop: 26, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 24, color: "var(--fu-text)" }}>Create your account</div>
+      <div style={{ marginTop: 26, fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 24, color: "var(--fu-text)" }}>Create your account</div>
       <div style={{ fontSize: 13.5, color: "var(--fu-text-secondary)", marginTop: 6, marginBottom: 20 }}>Built for college athletes.</div>
       <AuthField label="Full name" placeholder="Jordan Ellis" value={name} onChange={e => setName(e.target.value)} />
       <AuthField label="Email" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} />
@@ -57,11 +57,11 @@ export function SignupForm() {
       {notice && <div style={{ color: "#33D3A3", fontSize: 12.5, marginBottom: 10, fontWeight: 600 }}>{notice}</div>}
       <button
         onClick={handleSignup} disabled={loading}
-        style={{ width: "100%", marginTop: 6, padding: "16px", borderRadius: 16, border: "none", background: "#2A3EFF", color: "#fff", fontWeight: 800, fontSize: 15.5, cursor: loading ? "default" : "pointer", opacity: loading ? 0.7 : 1 }}>
+        style={{ width: "100%", marginTop: 6, padding: "16px", borderRadius: 16, border: "none", background: "var(--fu-cta-bg)", color: "var(--fu-cta-text)", fontWeight: 800, fontSize: 15.5, cursor: loading ? "default" : "pointer", opacity: loading ? 0.7 : 1 }}>
         {loading ? "Creating account…" : "Continue"}
       </button>
       <div style={{ textAlign: "center", fontSize: 13.5, color: "var(--fu-text-secondary)", marginTop: 16 }}>
-        Already have an account? <a href="/login" style={{ background: "none", border: "none", color: "#2A3EFF", fontWeight: 800, cursor: "pointer", fontSize: 13.5, textDecoration: "none" }}>Log in</a>
+        Already have an account? <a href="/login" style={{ background: "none", border: "none", color: "#fff", fontWeight: 800, cursor: "pointer", fontSize: 13.5, textDecoration: "none" }}>Log in</a>
       </div>
     </div>
   );

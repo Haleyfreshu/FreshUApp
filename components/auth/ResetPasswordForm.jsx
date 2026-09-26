@@ -38,7 +38,7 @@ export function ResetPasswordForm() {
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "60px 26px 30px" }}>
       <Logo height={34} />
-      <div style={{ marginTop: 26, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 24, color: "var(--fu-text)" }}>Set a new password</div>
+      <div style={{ marginTop: 26, fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 24, color: "var(--fu-text)" }}>Set a new password</div>
       <div style={{ fontSize: 13.5, color: "var(--fu-text-secondary)", marginTop: 6, marginBottom: 20 }}>
         Choose a new password for your account.
       </div>

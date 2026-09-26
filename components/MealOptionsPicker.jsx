@@ -61,12 +61,12 @@ export function MealOptionsPicker({ groups, selections, pickSingle, toggleMulti 
                   style={{
                     display: "flex", justifyContent: "space-between", alignItems: "center",
                     textAlign: "left", padding: "11px 14px", borderRadius: 12,
-                    border: isSelected ? "2px solid #2A3EFF" : "1.5px solid var(--fu-border)",
-                    background: isSelected ? "#2A3EFF29" : "var(--fu-card-alt)", cursor: "pointer"
+                    border: isSelected ? "2px solid #fff" : "1.5px solid var(--fu-border)",
+                    background: "var(--fu-card-alt)", cursor: "pointer"
                   }}>
                   <span style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
                     <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, fontWeight: 600, color: "var(--fu-text)" }}>
-                      {isSelected && <Check size={14} color="#2A3EFF" />} {o.label}
+                      {isSelected && <Check size={14} color="#fff" />} {o.label}
                     </span>
                     {macroSummary && (
                       <span style={{ fontSize: 11, fontWeight: 600, color: "var(--fu-text-muted)" }}>{macroSummary}</span>

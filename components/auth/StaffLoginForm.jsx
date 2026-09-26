@@ -49,7 +49,7 @@ export function StaffLoginForm() {
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 26px" }}>
       <Logo height={30} />
-      <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 22, color: "var(--fu-text)", marginTop: 22, marginBottom: 4 }}>Staff access</div>
+      <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 22, color: "var(--fu-text)", marginTop: 22, marginBottom: 4 }}>Staff access</div>
       <div style={{ fontSize: 13, color: "var(--fu-text-secondary)", marginBottom: 18 }}>Log in with your staff account to manage meals and orders.</div>
       <AuthField label="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="staff@example.com" />
       <AuthField label="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />

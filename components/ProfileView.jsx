@@ -62,14 +62,14 @@ export function ProfileView({ profile, initialEvents }) {
   return (
     <div style={{ padding: "18px 20px 20px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 22, color: "var(--fu-text)" }}>Profile</div>
+        <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 22, color: "var(--fu-text)" }}>Profile</div>
         <button onClick={() => edit ? save() : setEdit(true)} disabled={saving} style={{ background: "var(--fu-cta-bg)", border: "none", borderRadius: 12, padding: "9px 14px", color: "var(--fu-cta-text)", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>
           {saving ? "Saving…" : edit ? "Save" : "Edit"}
         </button>
       </div>
 
       <div style={{ background: "var(--fu-card)", borderRadius: 20, padding: 18, marginTop: 16, boxShadow: "0 2px 14px rgba(0,0,0,0.35)", display: "flex", alignItems: "center", gap: 14 }}>
-        <div style={{ width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg,#2A3EFF,#33D3A3)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 20 }}>
+        <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--fu-card-alt)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 20 }}>
           {(profile.name || "A")[0]}
         </div>
         <div>

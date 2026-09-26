@@ -28,7 +28,7 @@ export function MealDetailView({ meal, initialMenu, orderingOpenFor }) {
       <TopBar title={meal.category} onBack={() => router.push(`/menu?menu=${menuKey}`)} />
       <div style={{ padding: "0 20px 24px" }}>
         <div style={{
-          width: "100%", height: 200, borderRadius: 20, background: `${meal.color}1a`,
+          width: "100%", height: 200, borderRadius: 20, background: "var(--fu-card-alt)",
           display: "flex", alignItems: "center", justifyContent: "center", fontSize: 72, overflow: "hidden", marginBottom: 16
         }}>
           {meal.photo_url ? (
@@ -38,8 +38,8 @@ export function MealDetailView({ meal, initialMenu, orderingOpenFor }) {
         </div>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 21, color: "var(--fu-text)", lineHeight: 1.2 }}>{meal.name}</div>
-          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 19, color: "#2A3EFF", whiteSpace: "nowrap" }}>${totals.price.toFixed(2)}</div>
+          <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 21, color: "var(--fu-text)", lineHeight: 1.2 }}>{meal.name}</div>
+          <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 19, color: "var(--fu-text)", whiteSpace: "nowrap" }}>${totals.price.toFixed(2)}</div>
         </div>
 
         {meal.ingredients && (
@@ -55,7 +55,7 @@ export function MealDetailView({ meal, initialMenu, orderingOpenFor }) {
 
         {hasOptions && (
           <div style={{ marginTop: 22 }}>
-            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 15, color: "var(--fu-text)", marginBottom: 4 }}>Customize</div>
+            <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 15, color: "var(--fu-text)", marginBottom: 4 }}>Customize</div>
             <div style={{ fontSize: 12, color: "var(--fu-text-muted)", marginBottom: 14 }}>Pick your options before adding to cart.</div>
             <MealOptionsPicker groups={groups} selections={selections} pickSingle={pickSingle} toggleMulti={toggleMulti} />
           </div>
@@ -68,9 +68,9 @@ export function MealDetailView({ meal, initialMenu, orderingOpenFor }) {
               {Object.entries(MENUS).map(([key, m]) => (
                 <button key={key} onClick={() => setMenuKey(key)} style={{
                   flex: 1, padding: "9px 10px", borderRadius: 12,
-                  border: menuKey === key ? "1.5px solid #2A3EFF" : "1.5px solid var(--fu-border)",
-                  background: menuKey === key ? "#2A3EFF" : "var(--fu-card-alt)",
-                  color: menuKey === key ? "#fff" : "var(--fu-text-muted)",
+                  border: menuKey === key ? "1.5px solid var(--fu-cta-bg)" : "1.5px solid var(--fu-border)",
+                  background: menuKey === key ? "var(--fu-cta-bg)" : "var(--fu-card-alt)",
+                  color: menuKey === key ? "var(--fu-cta-text)" : "var(--fu-text-muted)",
                   fontWeight: 700, fontSize: 12.5, cursor: "pointer"
                 }}>
                   {m.label}
@@ -88,8 +88,8 @@ export function MealDetailView({ meal, initialMenu, orderingOpenFor }) {
 
         <button onClick={() => addToCart(meal, selectedOptions)} disabled={!canAdd}
           style={{
-            width: "100%", marginTop: 20, padding: "13px 10px", borderRadius: 14, border: "1.5px solid #2A3EFF",
-            background: inCart ? "#2A3EFF" : "var(--fu-cta-bg)", color: inCart ? "#fff" : "#2A3EFF",
+            width: "100%", marginTop: 20, padding: "13px 10px", borderRadius: 14, border: inCart ? "1.5px solid var(--fu-cta-bg)" : "1.5px solid #fff",
+            background: inCart ? "var(--fu-cta-bg)" : "transparent", color: inCart ? "var(--fu-cta-text)" : "#fff",
             fontWeight: 800, fontSize: 13.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
             cursor: canAdd ? "pointer" : "not-allowed", opacity: !canAdd && !inCart ? 0.5 : 1
           }}>

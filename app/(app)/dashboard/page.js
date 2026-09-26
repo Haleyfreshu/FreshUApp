@@ -37,7 +37,7 @@ export default async function DashboardPage() {
       const d = civilDateStr(new Date(o.created_at));
       return d >= start && d <= end;
     });
-    return menuOrders.flatMap((o) => o.order_items || []).map((item) => ({ ...item, menuKey, color: item.color || "#2A3EFF" }));
+    return menuOrders.flatMap((o) => o.order_items || []).map((item) => ({ ...item, menuKey }));
   });
 
   const weekEatenMealIds = (weekLog || []).map((l) => l.meal_id);

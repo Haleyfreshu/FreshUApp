@@ -9,7 +9,7 @@ import { STAFF_STORAGE_BUCKET } from "@/lib/constants";
 
 export function MealEditor({ meal, defaultDeliveryDay, onCancel, onSaved }) {
   const [form, setForm] = useState(meal || {
-    name: "", category: "Lunch", emoji: "🍽️", color: "#2A3EFF",
+    name: "", category: "Lunch", emoji: "🍽️", color: "#6B7280",
     on_monday_menu: (defaultDeliveryDay || "monday") === "monday",
     on_thursday_menu: defaultDeliveryDay === "thursday",
     ingredients: "", calories: 500, protein: 30, carbs: 40, fat: 15, price: 10, photo_url: null,
@@ -84,14 +84,14 @@ export function MealEditor({ meal, defaultDeliveryDay, onCancel, onSaved }) {
     <div style={{ position: "fixed", inset: 0, background: "rgba(11,14,26,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 80, padding: 16 }}>
       <div style={{ background: "var(--fu-card)", borderRadius: 20, padding: 20, width: "100%", maxWidth: 420, maxHeight: "88vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 17, color: "var(--fu-text)" }}>{currentMeal ? "Edit meal" : "Add meal"}</div>
+          <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 17, color: "var(--fu-text)" }}>{currentMeal ? "Edit meal" : "Add meal"}</div>
           <button onClick={onCancel} style={{ background: "var(--fu-card-alt)", border: "none", borderRadius: 10, padding: 6, cursor: "pointer", color: "var(--fu-text)" }}><X size={16} /></button>
         </div>
 
         <div style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: "var(--fu-text-muted)", marginBottom: 6 }}>Meal photo</div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 56, height: 56, borderRadius: 14, background: `${form.color}1a`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, overflow: "hidden", flexShrink: 0 }}>
+            <div style={{ width: 56, height: 56, borderRadius: 14, background: "var(--fu-card-alt)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, overflow: "hidden", flexShrink: 0 }}>
               {preview ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={preview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -107,9 +107,9 @@ export function MealEditor({ meal, defaultDeliveryDay, onCancel, onSaved }) {
             {[["on_monday_menu", "Monday Delivery"], ["on_thursday_menu", "Thursday Delivery"]].map(([key, label]) => (
               <button key={key} type="button" onClick={() => set(key, !form[key])} style={{
                 flex: 1, padding: "9px 10px", borderRadius: 12,
-                border: form[key] ? "1.5px solid #2A3EFF" : "1.5px solid var(--fu-border)",
-                background: form[key] ? "#2A3EFF" : "var(--fu-card-alt)",
-                color: form[key] ? "#fff" : "var(--fu-text-muted)",
+                border: form[key] ? "1.5px solid var(--fu-cta-bg)" : "1.5px solid var(--fu-border)",
+                background: form[key] ? "var(--fu-cta-bg)" : "var(--fu-card-alt)",
+                color: form[key] ? "var(--fu-cta-text)" : "var(--fu-text-muted)",
                 fontWeight: 700, fontSize: 12.5, cursor: "pointer"
               }}>
                 {label}

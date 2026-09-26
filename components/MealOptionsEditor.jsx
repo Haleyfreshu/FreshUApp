@@ -118,7 +118,7 @@ export function MealOptionsEditor({ mealId, mealMacros, groups, onGroupsChange }
             </div>
             <button onClick={() => addOption(group.id)} type="button" style={{
               display: "flex", alignItems: "center", gap: 4, background: "none", border: "none",
-              color: "#2A3EFF", fontWeight: 700, fontSize: 12, cursor: "pointer", padding: 4
+              color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", padding: 4
             }}>
               <Plus size={13} /> Add option
             </button>
@@ -143,8 +143,8 @@ export function MealOptionsEditor({ mealId, mealMacros, groups, onGroupsChange }
           </label>
         </div>
         <button onClick={addGroup} type="button" style={{
-          display: "flex", alignItems: "center", gap: 6, background: "#2A3EFF", border: "none", borderRadius: 10,
-          padding: "8px 12px", color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer"
+          display: "flex", alignItems: "center", gap: 6, background: "var(--fu-cta-bg)", border: "none", borderRadius: 10,
+          padding: "8px 12px", color: "var(--fu-cta-text)", fontWeight: 700, fontSize: 12, cursor: "pointer"
         }}>
           <Plus size={13} /> Add group
         </button>

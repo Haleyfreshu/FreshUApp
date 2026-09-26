@@ -71,11 +71,11 @@ export function OnboardingForm({ userId }) {
     <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "50px 24px 24px" }}>
       <div style={{ display: "flex", gap: 6, marginBottom: 22 }}>
         {steps.map((s, i) => (
-          <div key={s} style={{ flex: 1, height: 5, borderRadius: 4, background: i <= step ? "#2A3EFF" : "var(--fu-border)" }} />
+          <div key={s} style={{ flex: 1, height: 5, borderRadius: 4, background: i <= step ? "#fff" : "var(--fu-border)" }} />
         ))}
       </div>
-      <div style={{ fontSize: 12.5, fontWeight: 800, color: "#2A3EFF", letterSpacing: 0.5, textTransform: "uppercase" }}>Step {step + 1} of {steps.length}</div>
-      <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 23, color: "var(--fu-text)", marginTop: 4, marginBottom: 18 }}>
+      <div style={{ fontSize: 12.5, fontWeight: 800, color: "var(--fu-text-muted)", letterSpacing: 0.5, textTransform: "uppercase" }}>Step {step + 1} of {steps.length}</div>
+      <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 23, color: "var(--fu-text)", marginTop: 4, marginBottom: 18 }}>
         {step === 0 && "Tell us about you"}
         {step === 1 && "Your sport"}
         {step === 2 && "Set your nutrition goals"}
@@ -98,8 +98,8 @@ export function OnboardingForm({ userId }) {
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
             {SPORTS.map(sp => (
               <button key={sp} onClick={() => set("sport", sp)} style={{
-                padding: "12px 16px", borderRadius: 14, border: form.sport === sp ? "2px solid #2A3EFF" : "1.5px solid var(--fu-border)",
-                background: form.sport === sp ? "#2A3EFF29" : "var(--fu-card)", color: "var(--fu-text)", fontWeight: 700, fontSize: 13.5, cursor: "pointer"
+                padding: "12px 16px", borderRadius: 14, border: form.sport === sp ? "2px solid #fff" : "1.5px solid var(--fu-border)",
+                background: form.sport === sp ? "var(--fu-card-alt)" : "var(--fu-card)", color: "var(--fu-text)", fontWeight: 700, fontSize: 13.5, cursor: "pointer"
               }}>{sp}</button>
             ))}
           </div>
@@ -112,8 +112,8 @@ export function OnboardingForm({ userId }) {
               {Object.keys(GOAL_PRESETS).map(g => (
                 <button key={g} onClick={() => selectGoal(g)} style={{
                   textAlign: "left", padding: "13px 14px", borderRadius: 14,
-                  border: form.goal === g ? "2px solid #2A3EFF" : "1.5px solid var(--fu-border)",
-                  background: form.goal === g ? "#2A3EFF29" : "var(--fu-card)", cursor: "pointer"
+                  border: form.goal === g ? "2px solid #fff" : "1.5px solid var(--fu-border)",
+                  background: form.goal === g ? "var(--fu-card-alt)" : "var(--fu-card)", cursor: "pointer"
                 }}>
                   <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--fu-text)" }}>{g}</div>
                   <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)", marginTop: 2 }}>{GOAL_PRESETS[g].calories} cal · {GOAL_PRESETS[g].protein}g protein</div>

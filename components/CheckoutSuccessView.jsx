@@ -26,7 +26,7 @@ export function CheckoutSuccessView({ userId, order }) {
           <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#33D3A322", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
             <Check size={30} color="#33D3A3" />
           </div>
-          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 18, color: "var(--fu-text)" }}>
+          <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 18, color: "var(--fu-text)" }}>
             {stillProcessing ? "Payment received!" : "Order confirmed!"}
           </div>
           <div style={{ fontSize: 13, color: "var(--fu-text-secondary)", marginTop: 6 }}>

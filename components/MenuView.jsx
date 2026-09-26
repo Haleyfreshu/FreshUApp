@@ -67,7 +67,7 @@ export function MenuView({ meals, orderingOpenFor, initialMenu }) {
   return (
     <div style={{ padding: "18px 20px 20px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 22, color: "var(--fu-text)" }}>Menu</div>
+        <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 22, color: "var(--fu-text)" }}>Menu</div>
         <button onClick={() => setShowCart(true)} style={{
           position: "relative", background: "var(--fu-cta-bg)", border: "none", borderRadius: 14, padding: "10px 12px", cursor: "pointer",
           display: "flex", alignItems: "center", gap: 6
@@ -81,9 +81,9 @@ export function MenuView({ meals, orderingOpenFor, initialMenu }) {
         {Object.entries(MENUS).map(([key, m]) => (
           <button key={key} onClick={() => setActiveMenu(key)} style={{
             flex: 1, padding: "10px 8px", borderRadius: 12,
-            border: activeMenu === key ? "1.5px solid #2A3EFF" : "1.5px solid var(--fu-border)",
-            background: activeMenu === key ? "#2A3EFF" : "var(--fu-card)",
-            color: activeMenu === key ? "#fff" : "var(--fu-text)",
+            border: activeMenu === key ? "1.5px solid var(--fu-cta-bg)" : "1.5px solid var(--fu-border)",
+            background: activeMenu === key ? "var(--fu-cta-bg)" : "var(--fu-card)",
+            color: activeMenu === key ? "var(--fu-cta-text)" : "var(--fu-text)",
             fontWeight: 700, fontSize: 12.5, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2
           }}>
             {m.label}
@@ -129,7 +129,7 @@ export function MenuView({ meals, orderingOpenFor, initialMenu }) {
           <div onClick={() => setShowCart(false)} style={{ position: "absolute", inset: 0, background: "rgba(11,14,26,0.5)" }} />
           <div style={{ position: "relative", background: "var(--fu-card)", borderRadius: "24px 24px 0 0", padding: "20px 20px 24px", maxHeight: "80vh", display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 18, color: "var(--fu-text)" }}>{MENUS[activeMenu].label} cart</div>
+              <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 18, color: "var(--fu-text)" }}>{MENUS[activeMenu].label} cart</div>
               <button onClick={() => setShowCart(false)} style={{ background: "var(--fu-card-alt)", border: "none", borderRadius: 10, padding: 6, cursor: "pointer", color: "var(--fu-text)" }}><X size={16} /></button>
             </div>
             <div style={{ overflowY: "auto", flex: 1 }}>
@@ -138,7 +138,7 @@ export function MenuView({ meals, orderingOpenFor, initialMenu }) {
                 const itemTotals = applyOptionsToMeal(m, m.selectedOptions || []);
                 return (
                   <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: "1px solid var(--fu-border)" }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 12, background: `${m.color}1a`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{m.emoji}</div>
+                    <div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--fu-card-alt)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{m.emoji}</div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 700, fontSize: 13, color: "var(--fu-text)" }}>{m.name}</div>
                       {m.selectedOptions?.length > 0 && (
@@ -159,7 +159,7 @@ export function MenuView({ meals, orderingOpenFor, initialMenu }) {
             <button
               disabled={cart.length === 0 || checkingOut || !orderingOpen}
               onClick={handleCheckout}
-              style={{ width: "100%", padding: 15, borderRadius: 14, border: "none", background: cart.length && orderingOpen ? "#2A3EFF" : "var(--fu-card-alt)", color: cart.length && orderingOpen ? "#fff" : "var(--fu-text-muted)", fontWeight: 800, fontSize: 15, cursor: cart.length && orderingOpen ? "pointer" : "default", opacity: checkingOut ? 0.7 : 1 }}>
+              style={{ width: "100%", padding: 15, borderRadius: 14, border: "none", background: cart.length && orderingOpen ? "var(--fu-cta-bg)" : "var(--fu-card-alt)", color: cart.length && orderingOpen ? "var(--fu-cta-text)" : "var(--fu-text-muted)", fontWeight: 800, fontSize: 15, cursor: cart.length && orderingOpen ? "pointer" : "default", opacity: checkingOut ? 0.7 : 1 }}>
               {checkingOut ? "Redirecting to secure checkout…" : orderingOpen ? "Continue to checkout" : `Ordering opens ${MENU_NEXT_OPEN_LABEL[activeMenu]}`}
             </button>
           </div>

@@ -29,7 +29,7 @@ export function BottomNav({ cartCount = 0 }) {
             background: "none", border: "none", padding: "6px 0", position: "relative", cursor: "pointer"
           }}>
             <div style={{ position: "relative" }}>
-              <Icon size={22} color={isActive ? "#2A3EFF" : "var(--fu-text-muted)"} strokeWidth={isActive ? 2.4 : 2} />
+              <Icon size={22} color={isActive ? "#fff" : "var(--fu-text-muted)"} strokeWidth={isActive ? 2.4 : 2} />
               {it.key === "menu" && cartCount > 0 && (
                 <span style={{
                   position: "absolute", top: -6, right: -8, background: "#33D3A3", color: "#fff",
@@ -38,7 +38,7 @@ export function BottomNav({ cartCount = 0 }) {
                 }}>{cartCount}</span>
               )}
             </div>
-            <span style={{ fontSize: 10.5, fontWeight: isActive ? 800 : 600, color: isActive ? "#2A3EFF" : "var(--fu-text-muted)" }}>{it.label}</span>
+            <span style={{ fontSize: 10.5, fontWeight: isActive ? 800 : 600, color: isActive ? "#fff" : "var(--fu-text-muted)" }}>{it.label}</span>
           </button>
         );
       })}

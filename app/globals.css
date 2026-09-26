@@ -1,17 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
   --fu-bg: #000000;
-  --fu-card: #14172C;
-  --fu-card-alt: #1E2340;
-  --fu-text: #F4F5FA;
-  --fu-text-secondary: #A6ACC9;
-  --fu-text-muted: #6E7390;
-  --fu-label: #B7BEE0;
-  --fu-border: #262B4A;
+  --fu-card: #141414;
+  --fu-card-alt: #1C1C1C;
+  --fu-text: #FFFFFF;
+  --fu-text-secondary: #A8A8A8;
+  --fu-text-muted: #6B6B6B;
+  --fu-label: #B0B0B0;
+  --fu-border: #333333;
   --fu-danger-bg: #2C1620;
-  --fu-cta-bg: #F4F5FA;
-  --fu-cta-text: #0B0E1A;
+  --fu-cta-bg: #FFFFFF;
+  --fu-cta-text: #000000;
 }
 
 * {

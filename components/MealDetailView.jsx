@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { Check, Plus } from "lucide-react";
 import { TopBar } from "@/components/Shell";
 import { Tag } from "@/components/MealCard";
-import { MealOptionsModal } from "@/components/MealOptionsModal";
+import { useMealOptionsSelection, MealOptionsPicker } from "@/components/MealOptionsPicker";
 import { useCart } from "@/lib/cartContext";
+import { applyOptionsToMeal } from "@/lib/mealOptions";
 import { MENUS } from "@/lib/orderWindow";
 
 export function MealDetailView({ meal, initialMenu, orderingOpenFor }) {
@@ -14,16 +15,13 @@ export function MealDetailView({ meal, initialMenu, orderingOpenFor }) {
   const bothMenus = meal.on_monday_menu && meal.on_thursday_menu;
   const [menuKey, setMenuKey] = useState(initialMenu);
   const { cart, addToCart } = useCart(menuKey);
-  const [customizing, setCustomizing] = useState(false);
+  const { groups, selections, pickSingle, toggleMulti, selectedOptions, missingRequired } = useMealOptionsSelection(meal);
 
   const orderingOpen = orderingOpenFor[menuKey];
   const inCart = cart.some(c => c.id === meal.id);
-  const hasOptions = meal.meal_option_groups?.length > 0;
-
-  const handleAdd = () => {
-    if (hasOptions) setCustomizing(true);
-    else addToCart(meal, []);
-  };
+  const hasOptions = groups.length > 0;
+  const totals = applyOptionsToMeal(meal, selectedOptions);
+  const canAdd = orderingOpen && !inCart && !(hasOptions && missingRequired);
 
   return (
     <div>
@@ -41,7 +39,7 @@ export function MealDetailView({ meal, initialMenu, orderingOpenFor }) {
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
           <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 21, color: "var(--fu-text)", lineHeight: 1.2 }}>{meal.name}</div>
-          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 19, color: "#2A3EFF", whiteSpace: "nowrap" }}>${Number(meal.price).toFixed(2)}</div>
+          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 19, color: "#2A3EFF", whiteSpace: "nowrap" }}>${totals.price.toFixed(2)}</div>
         </div>
 
         {meal.ingredients && (
@@ -49,14 +47,22 @@ export function MealDetailView({ meal, initialMenu, orderingOpenFor }) {
         )}
 
         <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
-          <Tag label={`${meal.calories} cal`} />
-          <Tag label={`${meal.protein}g P`} />
-          <Tag label={`${meal.carbs}g C`} />
-          <Tag label={`${meal.fat}g F`} />
+          <Tag label={`${totals.calories} cal`} />
+          <Tag label={`${totals.protein}g P`} />
+          <Tag label={`${totals.carbs}g C`} />
+          <Tag label={`${totals.fat}g F`} />
         </div>
 
-        {bothMenus && (
+        {hasOptions && (
           <div style={{ marginTop: 22 }}>
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 15, color: "var(--fu-text)", marginBottom: 4 }}>Customize</div>
+            <div style={{ fontSize: 12, color: "var(--fu-text-muted)", marginBottom: 14 }}>Pick your options before adding to cart.</div>
+            <MealOptionsPicker groups={groups} selections={selections} pickSingle={pickSingle} toggleMulti={toggleMulti} />
+          </div>
+        )}
+
+        {bothMenus && (
+          <div style={{ marginTop: 6 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--fu-text-muted)", marginBottom: 6 }}>Add to which delivery?</div>
             <div style={{ display: "flex", gap: 8 }}>
               {Object.entries(MENUS).map(([key, m]) => (
@@ -80,28 +86,16 @@ export function MealDetailView({ meal, initialMenu, orderingOpenFor }) {
           </div>
         )}
 
-        <button onClick={handleAdd} disabled={inCart || !orderingOpen}
+        <button onClick={() => addToCart(meal, selectedOptions)} disabled={!canAdd}
           style={{
             width: "100%", marginTop: 20, padding: "13px 10px", borderRadius: 14, border: "1.5px solid #2A3EFF",
             background: inCart ? "#2A3EFF" : "var(--fu-cta-bg)", color: inCart ? "#fff" : "#2A3EFF",
             fontWeight: 800, fontSize: 13.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-            cursor: !orderingOpen && !inCart ? "not-allowed" : "pointer", opacity: !orderingOpen && !inCart ? 0.5 : 1
+            cursor: canAdd ? "pointer" : "not-allowed", opacity: !canAdd && !inCart ? 0.5 : 1
           }}>
-          {inCart ? <><Check size={16} /> In Cart</> : <><Plus size={16} /> Add to Cart</>}
+          {inCart ? <><Check size={16} /> In Cart</> : <><Plus size={16} /> Add to Cart — ${totals.price.toFixed(2)}</>}
         </button>
       </div>
-
-      {customizing && (
-        <MealOptionsModal
-          meal={meal}
-          actionLabel="Add to cart"
-          onCancel={() => setCustomizing(false)}
-          onConfirm={(selectedOptions) => {
-            addToCart(meal, selectedOptions);
-            setCustomizing(false);
-          }}
-        />
-      )}
     </div>
   );
 }

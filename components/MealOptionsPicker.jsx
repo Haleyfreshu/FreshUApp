@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check } from "lucide-react";
+import { optionMacroSummary } from "@/lib/mealOptions";
 
 // Selection state for a meal's customization groups — shared by the
 // checkout-flow modal and the inline picker on the meal detail screen so
@@ -49,6 +50,7 @@ export function MealOptionsPicker({ groups, selections, pickSingle, toggleMulti 
               const isSelected = g.selection_type === "single"
                 ? selections[g.id] === o.id
                 : (selections[g.id] || []).includes(o.id);
+              const macroSummary = optionMacroSummary(o);
               return (
                 <button
                   key={o.id}
@@ -60,11 +62,16 @@ export function MealOptionsPicker({ groups, selections, pickSingle, toggleMulti 
                     border: isSelected ? "2px solid #2A3EFF" : "1.5px solid var(--fu-border)",
                     background: isSelected ? "#2A3EFF29" : "var(--fu-card-alt)", cursor: "pointer"
                   }}>
-                  <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, fontWeight: 600, color: "var(--fu-text)" }}>
-                    {isSelected && <Check size={14} color="#2A3EFF" />} {o.label}
+                  <span style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, fontWeight: 600, color: "var(--fu-text)" }}>
+                      {isSelected && <Check size={14} color="#2A3EFF" />} {o.label}
+                    </span>
+                    {macroSummary && (
+                      <span style={{ fontSize: 11, fontWeight: 600, color: "var(--fu-text-muted)" }}>{macroSummary}</span>
+                    )}
                   </span>
                   {Number(o.price_delta) !== 0 && (
-                    <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--fu-text-secondary)" }}>
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--fu-text-secondary)", whiteSpace: "nowrap", flexShrink: 0, marginLeft: 10 }}>
                       {Number(o.price_delta) > 0 ? "+" : ""}${Number(o.price_delta).toFixed(2)}
                     </span>
                   )}

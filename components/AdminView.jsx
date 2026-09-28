@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { UtensilsCrossed, Users, ClipboardList, CalendarOff, Percent, Upload, Download, Pencil, Trash2 } from "lucide-react";
+import { UtensilsCrossed, Users, ClipboardList, CalendarOff, Percent, Activity, Upload, Download, Pencil, Trash2 } from "lucide-react";
 import { Tag } from "@/components/MealCard";
 import { FRESHU_LOGO } from "@/components/Shell";
 import { MealEditor } from "@/components/MealEditor";
 import { createClient } from "@/lib/supabase/client";
 import { optionsLabel } from "@/lib/mealOptions";
 import { MENUS, mealIsOnMenu, upcomingDeliveryDates } from "@/lib/orderWindow";
+import { calculateNutritionGoals } from "@/lib/nutritionCalc";
+import { BUDDY_STATES, fuelState, computeFuelScore } from "@/lib/fuel";
 
 function fmtDeliveryDate(dateStr) {
   return new Date(`${dateStr}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
@@ -28,7 +30,7 @@ function discountStatus(promo) {
   return { label: "Active", color: "#33D3A3" };
 }
 
-export function AdminView({ initialMeals, athletes, orders, initialClosures, initialDiscounts, initialBogoCodes }) {
+export function AdminView({ initialMeals, athletes, orders, initialClosures, initialDiscounts, initialBogoCodes, todayLogs, todayEvents }) {
   const router = useRouter();
   const [tab, setTab] = useState("meals");
   const [mealMenuFilter, setMealMenuFilter] = useState("monday");
@@ -45,6 +47,40 @@ export function AdminView({ initialMeals, athletes, orders, initialClosures, ini
   const [newBogoCode, setNewBogoCode] = useState({ code: "", expiresAt: "", maxRedemptions: "" });
   const [bogoError, setBogoError] = useState("");
   const [savingBogo, setSavingBogo] = useState(false);
+
+  // Today's fuel status per athlete, grouped by sport, so staff can spot
+  // who's under-fueled today without opening every athlete individually —
+  // a lightweight substitute for a clinical RED-S screen, meant to prompt
+  // a human check-in, not diagnose anything on its own.
+  const teamFuelBySport = useMemo(() => {
+    const logsByAthlete = {};
+    (todayLogs || []).forEach(l => { (logsByAthlete[l.athlete_id] ||= []).push(l); });
+    const eventsByAthlete = {};
+    (todayEvents || []).forEach(e => { (eventsByAthlete[e.athlete_id] ||= []).push(e); });
+
+    const rows = (athletes || []).map(a => {
+      const logs = logsByAthlete[a.id] || [];
+      const totals = logs.reduce((acc, l) => ({
+        calories: acc.calories + (l.calories || 0), protein: acc.protein + (l.protein || 0),
+        carbs: acc.carbs + (l.carbs || 0), fat: acc.fat + (l.fat || 0),
+      }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+      const isGameDay = (eventsByAthlete[a.id] || []).some(e => e.is_game_day);
+      const gameGoals = isGameDay ? calculateNutritionGoals({
+        sex: a.sex, age: a.age, heightIn: a.height, weightLb: a.weight, sport: a.sport, goal: a.goal, dayType: "game",
+      }) : null;
+      const targets = gameGoals || { calories: a.calorie_goal, protein: a.protein_goal, carbs: a.carb_goal, fat: a.fat_goal };
+      const score = computeFuelScore(totals, { calorie_goal: targets.calories, protein_goal: targets.protein, carb_goal: targets.carbs, fat_goal: targets.fat });
+      return { athlete: a, score, isGameDay, loggedCount: logs.length };
+    }).sort((x, y) => x.score - y.score);
+
+    const bySport = new Map();
+    rows.forEach(r => {
+      const key = r.athlete.sport || "No sport set";
+      if (!bySport.has(key)) bySport.set(key, []);
+      bySport.get(key).push(r);
+    });
+    return [...bySport.entries()].sort(([a], [b]) => a.localeCompare(b));
+  }, [athletes, todayLogs, todayEvents]);
 
   const deleteMeal = async (id) => {
     if (!window.confirm("Remove this meal from the menu?")) return;
@@ -191,6 +227,7 @@ export function AdminView({ initialMeals, athletes, orders, initialClosures, ini
         {[
           { key: "meals", label: "Meals", icon: UtensilsCrossed },
           { key: "athletes", label: "Athletes", icon: Users },
+          { key: "team-fuel", label: "Team Fuel", icon: Activity },
           { key: "orders", label: "Orders", icon: ClipboardList },
           { key: "closures", label: "Closures", icon: CalendarOff },
           { key: "discounts", label: "Discounts", icon: Percent },
@@ -283,6 +320,45 @@ export function AdminView({ initialMeals, athletes, orders, initialClosures, ini
               </div>
             ))}
           </div>
+        )}
+
+        {tab === "team-fuel" && (
+          <>
+            <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)", marginBottom: 16, lineHeight: 1.4 }}>
+              Today&apos;s fuel status by sport, lowest first within each group. This flags who to check in with — it&apos;s not a diagnosis, just a heads-up.
+            </div>
+            {teamFuelBySport.length === 0 && (
+              <div style={{ background: "var(--fu-card)", borderRadius: 16, padding: 20, textAlign: "center", color: "var(--fu-text-muted)", fontSize: 13 }}>
+                No athletes yet.
+              </div>
+            )}
+            {teamFuelBySport.map(([sport, rows]) => (
+              <div key={sport} style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--fu-text-muted)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>{sport}</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {rows.map(({ athlete: a, score, isGameDay, loggedCount }) => {
+                    const state = BUDDY_STATES[fuelState(score)];
+                    return (
+                      <div key={a.id} style={{ background: "var(--fu-card)", borderRadius: 16, padding: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.3)", display: "flex", alignItems: "center", gap: 12 }}>
+                        <div style={{ width: 42, height: 42, borderRadius: "50%", background: "var(--fu-card-alt)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800 }}>{(a.name || "A")[0]}</div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontWeight: 700, fontSize: 13.5, color: "var(--fu-text)" }}>{a.name}</span>
+                            {isGameDay && <span style={{ fontSize: 9.5, fontWeight: 800, color: "var(--fu-cta-text)", background: "var(--fu-cta-bg)", padding: "2px 6px", borderRadius: 999 }}>GAME</span>}
+                          </div>
+                          <div style={{ fontSize: 11, color: "var(--fu-text-muted)", marginTop: 1 }}>{loggedCount === 0 ? "Nothing logged yet today" : `${loggedCount} item${loggedCount === 1 ? "" : "s"} logged today`}</div>
+                        </div>
+                        <span style={{
+                          fontFamily: "'Baloo 2',sans-serif", fontWeight: 700, fontSize: 12, padding: "5px 11px",
+                          borderRadius: 999, color: "#fff", background: state.color, whiteSpace: "nowrap"
+                        }}>{score} · {state.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </>
         )}
 
         {tab === "orders" && (

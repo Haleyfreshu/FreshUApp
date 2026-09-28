@@ -6,7 +6,8 @@ import { LogOut } from "lucide-react";
 import { Field } from "@/components/Fields";
 import { TrainingScheduleEditor } from "@/components/TrainingScheduleEditor";
 import { fmtTime } from "@/lib/format";
-import { calculateNutritionGoals } from "@/lib/nutritionCalc";
+import { calculateNutritionGoals, safeCalorieFloor, WEIGHT_CLASS_SPORTS } from "@/lib/nutritionCalc";
+import { DIETARY_TAGS } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 
 export function ProfileView({ profile, initialEvents }) {
@@ -16,22 +17,31 @@ export function ProfileView({ profile, initialEvents }) {
   const [form, setForm] = useState(profile);
   useEffect(() => setForm(profile), [profile]);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const toggleRestriction = (tag) => setForm(f => {
+    const current = f.dietary_restrictions || [];
+    return { ...f, dietary_restrictions: current.includes(tag) ? current.filter(t => t !== tag) : [...current, tag] };
+  });
 
   const [editSchedule, setEditSchedule] = useState(false);
   const [savingSchedule, setSavingSchedule] = useState(false);
   const [events, setEvents] = useState(initialEvents);
   useEffect(() => setEvents(initialEvents), [initialEvents]);
 
+  const calorieFloor = safeCalorieFloor({ sex: form.sex, age: Number(form.age), heightIn: Number(form.height), weightLb: Number(form.weight) });
+  const isWeightClassSport = WEIGHT_CLASS_SPORTS.includes(form.sport);
+
   const save = async () => {
     setSaving(true);
     const supabase = createClient();
+    const clampedCalorieGoal = calorieFloor ? Math.max(Number(form.calorie_goal), calorieFloor) : Number(form.calorie_goal);
     await supabase.from("profiles").update({
       school: form.school, sport: form.sport, sex: form.sex,
       age: form.age === "" ? null : Number(form.age),
       height: form.height === "" ? null : Number(form.height),
       weight: form.weight === "" ? null : Number(form.weight),
-      calorie_goal: Number(form.calorie_goal), protein_goal: Number(form.protein_goal),
+      calorie_goal: clampedCalorieGoal, protein_goal: Number(form.protein_goal),
       carb_goal: Number(form.carb_goal), fat_goal: Number(form.fat_goal),
+      dietary_restrictions: form.dietary_restrictions || [],
     }).eq("id", profile.id);
     setSaving(false);
     setEdit(false);
@@ -112,6 +122,25 @@ export function ProfileView({ profile, initialEvents }) {
           <Field label="Height (in)" value={form.height} edit={edit} onChange={v => set("height", v)} />
           <Field label="Weight (lb)" value={form.weight} edit={edit} onChange={v => set("weight", v)} />
         </div>
+        <div style={{ marginTop: 4 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--fu-text-muted)", marginBottom: 6 }}>Dietary restrictions</div>
+          {edit ? (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {DIETARY_TAGS.map(tag => (
+                <button key={tag} type="button" onClick={() => toggleRestriction(tag)} style={{
+                  padding: "6px 10px", borderRadius: 999,
+                  border: (form.dietary_restrictions || []).includes(tag) ? "1.5px solid #fff" : "1.5px solid var(--fu-border)",
+                  background: (form.dietary_restrictions || []).includes(tag) ? "var(--fu-card-alt)" : "transparent",
+                  color: "var(--fu-text)", fontWeight: 700, fontSize: 11.5, cursor: "pointer"
+                }}>{tag}</button>
+              ))}
+            </div>
+          ) : (
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--fu-text)" }}>
+              {(form.dietary_restrictions || []).length > 0 ? form.dietary_restrictions.join(", ") : "—"}
+            </div>
+          )}
+        </div>
       </div>
 
       <div style={{ background: "var(--fu-card)", borderRadius: 20, padding: 18, marginTop: 14, boxShadow: "0 2px 14px rgba(0,0,0,0.35)" }}>
@@ -132,6 +161,16 @@ export function ProfileView({ profile, initialEvents }) {
           <Field label="Fat" value={form.fat_goal} edit={edit} onChange={v => set("fat_goal", v)} />
         </div>
         <div style={{ fontSize: 11, color: "var(--fu-text-muted)", marginTop: 2, lineHeight: 1.4 }}>Your carb target is automatically boosted on any day you&apos;ve tagged as a game in your training schedule below.</div>
+        {calorieFloor && (
+          <div style={{ fontSize: 11, color: "var(--fu-text-muted)", marginTop: 6, lineHeight: 1.4 }}>
+            Calorie target can&apos;t be edited below {calorieFloor} cal — your body&apos;s resting energy need.
+          </div>
+        )}
+        {isWeightClassSport && (
+          <div style={{ background: "#FFB64822", border: "1px solid #FFB64855", borderRadius: 14, padding: "12px 14px", marginTop: 12, fontSize: 12, color: "var(--fu-text)", lineHeight: 1.4 }}>
+            Weight-class sport noted. If you&apos;re managing weight for competition, talk to your athletic trainer or a sports dietitian about a safe approach.
+          </div>
+        )}
       </div>
 
       <div style={{ background: "var(--fu-card)", borderRadius: 20, padding: 18, marginTop: 14, boxShadow: "0 2px 14px rgba(0,0,0,0.35)" }}>

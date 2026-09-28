@@ -15,12 +15,13 @@ export default async function DashboardPage() {
   const weekLogEnd = MENU_KEYS.map((k) => consumptionWeeks[k].end).sort().at(-1);
   const lookbackSince = new Date(Date.now() - ORDER_LOOKBACK_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
-  const [{ data: profile }, { data: todayLog }, { data: weekLog }, { data: recentOrders }, { data: todayEvents }] = await Promise.all([
+  const [{ data: profile }, { data: todayLog }, { data: weekLog }, { data: recentOrders }, { data: todayEvents }, { data: todayHydration }] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).single(),
     supabase.from("daily_logs").select("*").eq("athlete_id", user.id).eq("log_date", today),
     supabase.from("daily_logs").select("meal_id").eq("athlete_id", user.id).gte("log_date", weekLogStart).lte("log_date", weekLogEnd),
     supabase.from("orders").select("*, order_items(*)").eq("athlete_id", user.id).in("status", ["This Week", "Delivered"]).gte("created_at", lookbackSince),
     supabase.from("training_events").select("*").eq("athlete_id", user.id).eq("day_of_week", currentDayAbbrev()),
+    supabase.from("hydration_logs").select("*").eq("athlete_id", user.id).eq("log_date", today),
   ]);
 
   // Orders were fetched with a generous lookback window (created_at is a
@@ -49,6 +50,7 @@ export default async function DashboardPage() {
       weeklyMeals={weeklyMeals}
       weekEatenMealIds={weekEatenMealIds}
       todayEvents={todayEvents || []}
+      todayHydration={todayHydration || []}
     />
   );
 }

@@ -7,13 +7,13 @@ import { MealCard } from "@/components/MealCard";
 import { MealOptionsModal } from "@/components/MealOptionsModal";
 import { useCart } from "@/lib/cartContext";
 import { applyOptionsToMeal, optionsLabel } from "@/lib/mealOptions";
-import { MENUS, mealIsOnMenu } from "@/lib/orderWindow";
+import { MENUS, mealIsOnMenu, hoursUntilWindowCloses } from "@/lib/orderWindow";
 import { SLOT_ORDER } from "@/lib/constants";
 
 const MENU_WINDOW_LABEL = { monday: "Sunday through Wednesday", thursday: "Sunday through the following Sunday, the week before delivery" };
 const MENU_NEXT_OPEN_LABEL = { monday: "Sunday", thursday: "Sunday" };
 
-export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }) {
+export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu, dietaryRestrictions }) {
   const router = useRouter();
   const [activeMenu, setActiveMenu] = useState(
     initialMenu && MENUS[initialMenu] ? initialMenu :
@@ -30,7 +30,13 @@ export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }
 
   const orderingOpen = orderingOpenFor[activeMenu];
   const isClosure = !!closureNoteFor?.[activeMenu];
-  const menuMeals = meals.filter(m => mealIsOnMenu(m, activeMenu));
+  const hoursLeft = orderingOpen ? hoursUntilWindowCloses(activeMenu) : null;
+  const closingSoon = hoursLeft !== null && hoursLeft <= 24;
+  const restrictions = dietaryRestrictions || [];
+  const menuMealsAll = meals.filter(m => mealIsOnMenu(m, activeMenu));
+  const menuMeals = restrictions.length === 0 ? menuMealsAll
+    : menuMealsAll.filter(m => restrictions.every(r => (m.dietary_tags || []).includes(r)));
+  const hiddenByRestrictions = menuMealsAll.length - menuMeals.length;
   const filtered = menuMeals.filter(m =>
     m.name.toLowerCase().includes(query.toLowerCase()) || m.category.toLowerCase().includes(query.toLowerCase())
   );
@@ -125,6 +131,12 @@ export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }
         </div>
       )}
 
+      {closingSoon && (
+        <div style={{ background: "#FFB64822", border: "1px solid #FFB64855", borderRadius: 14, padding: "12px 14px", marginTop: 14, fontSize: 13, color: "var(--fu-text)", lineHeight: 1.4, fontWeight: 600 }}>
+          {MENUS[activeMenu].label} ordering closes in {hoursLeft < 1 ? "less than an hour" : `about ${Math.round(hoursLeft)} hour${Math.round(hoursLeft) === 1 ? "" : "s"}`} — order now if you don&apos;t want to miss this window.
+        </div>
+      )}
+
       {!isClosure && (
         <>
           <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--fu-card)", borderRadius: 14, padding: "10px 14px", marginTop: 14, boxShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>
@@ -132,6 +144,12 @@ export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }
             <input placeholder="Search meals or category" value={query} onChange={e => setQuery(e.target.value)}
               style={{ border: "none", outline: "none", fontSize: 13.5, flex: 1, background: "transparent", color: "var(--fu-text)" }} />
           </div>
+
+          {hiddenByRestrictions > 0 && (
+            <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)", marginTop: 8 }}>
+              Filtered to match your dietary restrictions ({restrictions.join(", ")}) — {hiddenByRestrictions} meal{hiddenByRestrictions === 1 ? "" : "s"} hidden. Change this in Profile.
+            </div>
+          )}
 
           {grouped.length === 0 && (
             <div style={{ background: "var(--fu-card)", borderRadius: 18, padding: "20px 16px", textAlign: "center", color: "var(--fu-text-muted)", fontSize: 13, marginTop: 20 }}>

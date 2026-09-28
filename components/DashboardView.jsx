@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Clock, Plus, Trash2 } from "lucide-react";
+import { Clock, Plus, Trash2, Droplet } from "lucide-react";
 import { MealCard, Tag } from "@/components/MealCard";
 import { FRESHU_LOGO } from "@/components/Shell";
 import { LogFoodModal } from "@/components/LogFoodModal";
@@ -11,14 +11,17 @@ import { addMinutes, minutesOfDay, timeStrFromMinutes, fmtTime } from "@/lib/for
 import { computeMealMinutes, DEFAULT_MEAL_MINUTES } from "@/lib/schedule";
 import { optionsLabel } from "@/lib/mealOptions";
 import { civilDateStr, MENUS } from "@/lib/orderWindow";
-import { calculateNutritionGoals } from "@/lib/nutritionCalc";
+import { calculateNutritionGoals, calculateHydrationTarget } from "@/lib/nutritionCalc";
 import { createClient } from "@/lib/supabase/client";
 
-export function DashboardView({ profile, todayLog, weeklyMeals, weekEatenMealIds, todayEvents }) {
+const WATER_QUICK_ADD_OZ = [8, 16, 24];
+
+export function DashboardView({ profile, todayLog, weeklyMeals, weekEatenMealIds, todayEvents, todayHydration }) {
   const router = useRouter();
   const [pending, setPending] = useState(null);
   const [showLogFood, setShowLogFood] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [loggingWater, setLoggingWater] = useState(false);
 
   const isGameDay = todayEvents.some(ev => ev.is_game_day);
   const gameDayGoals = useMemo(() => isGameDay ? calculateNutritionGoals({
@@ -36,6 +39,11 @@ export function DashboardView({ profile, todayLog, weeklyMeals, weekEatenMealIds
 
   const score = useMemo(() => computeFuelScore(totals, { calorie_goal: targets.calories, protein_goal: targets.protein, carb_goal: targets.carbs, fat_goal: targets.fat }), [totals, targets]);
   const state = BUDDY_STATES[fuelState(score)];
+
+  const waterOz = useMemo(() => (todayHydration || []).reduce((sum, l) => sum + l.ounces, 0), [todayHydration]);
+  const waterTarget = useMemo(() => calculateHydrationTarget({
+    weightLb: profile.weight, sport: profile.sport, dayType: isGameDay ? "game" : "training",
+  }), [profile, isGameDay]);
 
   const mealMinutes = useMemo(() => computeMealMinutes(todayEvents), [todayEvents]);
   const scheduleAdjusted = useMemo(
@@ -100,6 +108,15 @@ export function DashboardView({ profile, todayLog, weeklyMeals, weekEatenMealIds
     router.refresh();
   };
 
+  const logWater = async (ounces) => {
+    setLoggingWater(true);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    await supabase.from("hydration_logs").insert({ athlete_id: user.id, log_date: civilDateStr(), ounces });
+    setLoggingWater(false);
+    router.refresh();
+  };
+
   return (
     <div style={{ padding: "18px 20px 20px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -150,6 +167,33 @@ export function DashboardView({ profile, todayLog, weeklyMeals, weekEatenMealIds
           </div>
         ))}
       </div>
+
+      {waterTarget && (
+        <div style={{ background: "var(--fu-card)", borderRadius: 24, padding: "18px 18px 20px", marginTop: 16, boxShadow: "0 4px 20px rgba(0,0,0,0.35)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Droplet size={16} color="var(--fu-text)" />
+              <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 15, color: "var(--fu-text)" }}>Hydration</div>
+            </div>
+            <span style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 700, fontSize: 14, color: "var(--fu-text)", fontVariantNumeric: "tabular-nums" }}>
+              {waterOz} <span style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 12, color: "var(--fu-text-muted)" }}>/ {waterTarget} oz</span>
+            </span>
+          </div>
+          <div style={{ height: 8, background: "var(--fu-card-alt)", borderRadius: 999, marginTop: 10, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${Math.min(100, (waterOz / waterTarget) * 100)}%`, background: "#fff", borderRadius: 999 }} />
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+            {WATER_QUICK_ADD_OZ.map(oz => (
+              <button key={oz} onClick={() => logWater(oz)} disabled={loggingWater} style={{
+                flex: 1, padding: "10px 8px", borderRadius: 12, border: "1.5px solid var(--fu-border)",
+                background: "var(--fu-card-alt)", color: "var(--fu-text)", fontWeight: 700, fontSize: 12.5, cursor: loggingWater ? "default" : "pointer", opacity: loggingWater ? 0.6 : 1
+              }}>
+                +{oz} oz
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div style={{ marginTop: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>

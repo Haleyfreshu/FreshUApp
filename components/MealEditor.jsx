@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { SmallField } from "@/components/Fields";
 import { MealOptionsEditor } from "@/components/MealOptionsEditor";
 import { createClient } from "@/lib/supabase/client";
-import { STAFF_STORAGE_BUCKET, SLOT_ORDER } from "@/lib/constants";
+import { STAFF_STORAGE_BUCKET, SLOT_ORDER, DIETARY_TAGS } from "@/lib/constants";
 
 export function MealEditor({ meal, defaultDeliveryDay, onCancel, onSaved }) {
   const [form, setForm] = useState(meal || {
@@ -13,6 +13,7 @@ export function MealEditor({ meal, defaultDeliveryDay, onCancel, onSaved }) {
     on_monday_menu: (defaultDeliveryDay || "monday") === "monday",
     on_thursday_menu: defaultDeliveryDay === "thursday",
     ingredients: "", calories: 500, protein: 30, carbs: 40, fat: 15, price: 10, photo_url: null,
+    dietary_tags: [],
   });
   const [currentMeal, setCurrentMeal] = useState(meal);
   const [groups, setGroups] = useState(meal?.meal_option_groups || []);
@@ -22,6 +23,9 @@ export function MealEditor({ meal, defaultDeliveryDay, onCancel, onSaved }) {
   const [error, setError] = useState("");
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const toggleDietaryTag = (tag) => setForm(f => ({
+    ...f, dietary_tags: (f.dietary_tags || []).includes(tag) ? f.dietary_tags.filter(t => t !== tag) : [...(f.dietary_tags || []), tag],
+  }));
 
   const onPhotoChange = (e) => {
     const file = e.target.files?.[0];
@@ -54,6 +58,7 @@ export function MealEditor({ meal, defaultDeliveryDay, onCancel, onSaved }) {
         on_monday_menu: form.on_monday_menu, on_thursday_menu: form.on_thursday_menu,
         ingredients: form.ingredients, calories: +form.calories, protein: +form.protein,
         carbs: +form.carbs, fat: +form.fat, price: +form.price, photo_url,
+        dietary_tags: form.dietary_tags || [],
       };
 
       let saved;
@@ -129,6 +134,22 @@ export function MealEditor({ meal, defaultDeliveryDay, onCancel, onSaved }) {
         <div style={{ display: "flex", gap: 10 }}>
           <SmallField label="Emoji" value={form.emoji} onChange={v => set("emoji", v.target.value)} />
           <SmallField label="Price ($)" type="number" value={form.price} onChange={v => set("price", v.target.value)} />
+        </div>
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--fu-text-muted)", marginBottom: 6 }}>Dietary tags (what this meal satisfies)</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {DIETARY_TAGS.map(tag => (
+              <button key={tag} type="button" onClick={() => toggleDietaryTag(tag)} style={{
+                padding: "6px 10px", borderRadius: 999,
+                border: (form.dietary_tags || []).includes(tag) ? "1.5px solid var(--fu-cta-bg)" : "1.5px solid var(--fu-border)",
+                background: (form.dietary_tags || []).includes(tag) ? "var(--fu-cta-bg)" : "var(--fu-card-alt)",
+                color: (form.dietary_tags || []).includes(tag) ? "var(--fu-cta-text)" : "var(--fu-text-muted)",
+                fontWeight: 700, fontSize: 11.5, cursor: "pointer"
+              }}>
+                {tag}
+              </button>
+            ))}
+          </div>
         </div>
         <SmallField label="Ingredients" value={form.ingredients} onChange={v => set("ingredients", v.target.value)} />
         <div style={{ display: "flex", gap: 10 }}>

@@ -7,7 +7,6 @@ import { Field } from "@/components/Fields";
 import { TrainingScheduleEditor } from "@/components/TrainingScheduleEditor";
 import { fmtTime } from "@/lib/format";
 import { calculateNutritionGoals, safeCalorieFloor, WEIGHT_CLASS_SPORTS } from "@/lib/nutritionCalc";
-import { DIETARY_TAGS } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 
 export function ProfileView({ profile, initialEvents }) {
@@ -17,10 +16,6 @@ export function ProfileView({ profile, initialEvents }) {
   const [form, setForm] = useState(profile);
   useEffect(() => setForm(profile), [profile]);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-  const toggleRestriction = (tag) => setForm(f => {
-    const current = f.dietary_restrictions || [];
-    return { ...f, dietary_restrictions: current.includes(tag) ? current.filter(t => t !== tag) : [...current, tag] };
-  });
 
   const [editSchedule, setEditSchedule] = useState(false);
   const [savingSchedule, setSavingSchedule] = useState(false);
@@ -41,7 +36,6 @@ export function ProfileView({ profile, initialEvents }) {
       weight: form.weight === "" ? null : Number(form.weight),
       calorie_goal: clampedCalorieGoal, protein_goal: Number(form.protein_goal),
       carb_goal: Number(form.carb_goal), fat_goal: Number(form.fat_goal),
-      dietary_restrictions: form.dietary_restrictions || [],
     }).eq("id", profile.id);
     setSaving(false);
     setEdit(false);
@@ -121,25 +115,6 @@ export function ProfileView({ profile, initialEvents }) {
           <Field label="Age" value={form.age} edit={edit} onChange={v => set("age", v)} />
           <Field label="Height (in)" value={form.height} edit={edit} onChange={v => set("height", v)} />
           <Field label="Weight (lb)" value={form.weight} edit={edit} onChange={v => set("weight", v)} />
-        </div>
-        <div style={{ marginTop: 4 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--fu-text-muted)", marginBottom: 6 }}>Dietary restrictions</div>
-          {edit ? (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {DIETARY_TAGS.map(tag => (
-                <button key={tag} type="button" onClick={() => toggleRestriction(tag)} style={{
-                  padding: "6px 10px", borderRadius: 999,
-                  border: (form.dietary_restrictions || []).includes(tag) ? "1.5px solid #fff" : "1.5px solid var(--fu-border)",
-                  background: (form.dietary_restrictions || []).includes(tag) ? "var(--fu-card-alt)" : "transparent",
-                  color: "var(--fu-text)", fontWeight: 700, fontSize: 11.5, cursor: "pointer"
-                }}>{tag}</button>
-              ))}
-            </div>
-          ) : (
-            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--fu-text)" }}>
-              {(form.dietary_restrictions || []).length > 0 ? form.dietary_restrictions.join(", ") : "—"}
-            </div>
-          )}
         </div>
       </div>
 

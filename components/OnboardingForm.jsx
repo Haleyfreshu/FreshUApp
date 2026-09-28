@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { GOAL_PRESETS, SPORTS, DIETARY_TAGS } from "@/lib/constants";
+import { GOAL_PRESETS, SPORTS } from "@/lib/constants";
 import { calculateNutritionGoals, safeCalorieFloor, WEIGHT_CLASS_SPORTS } from "@/lib/nutritionCalc";
 import { AuthField } from "@/components/Fields";
 import { TrainingScheduleEditor } from "@/components/TrainingScheduleEditor";
@@ -18,14 +18,10 @@ export function OnboardingForm({ userId }) {
   const [form, setForm] = useState({
     school: "", sport: "", sex: "", age: "", height: "", weight: "",
     goal: "Lean Performance", calorieGoal: 2400, proteinGoal: 160, carbGoal: 250, fatGoal: 70,
-    dietaryRestrictions: [],
     events: [],
   });
   const steps = ["Basics", "Sport", "Goals", "Schedule"];
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-  const toggleRestriction = (tag) => setForm(f => ({
-    ...f, dietaryRestrictions: f.dietaryRestrictions.includes(tag) ? f.dietaryRestrictions.filter(t => t !== tag) : [...f.dietaryRestrictions, tag],
-  }));
 
   const computedGoal = (g, overrides = {}) => {
     const f = { ...form, ...overrides };
@@ -69,7 +65,6 @@ export function OnboardingForm({ userId }) {
       protein_goal: form.proteinGoal,
       carb_goal: form.carbGoal,
       fat_goal: form.fatGoal,
-      dietary_restrictions: form.dietaryRestrictions,
       onboarded: true,
     }).eq("id", userId);
     if (updateError) {
@@ -125,18 +120,6 @@ export function OnboardingForm({ userId }) {
               <div style={{ flex: 1 }}><AuthField label="Height (in)" type="number" placeholder="70" value={form.height} onChange={e => set("height", e.target.value)} /></div>
               <div style={{ flex: 1 }}><AuthField label="Weight (lb)" type="number" placeholder="185" value={form.weight} onChange={e => set("weight", e.target.value)} /></div>
             </div>
-            <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--fu-label)", marginBottom: 8, marginTop: 6 }}>Dietary restrictions (optional)</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {DIETARY_TAGS.map(tag => (
-                <button key={tag} type="button" onClick={() => toggleRestriction(tag)} style={{
-                  padding: "8px 12px", borderRadius: 999,
-                  border: form.dietaryRestrictions.includes(tag) ? "1.5px solid #fff" : "1.5px solid var(--fu-border)",
-                  background: form.dietaryRestrictions.includes(tag) ? "var(--fu-card-alt)" : "var(--fu-card)",
-                  color: "var(--fu-text)", fontWeight: 700, fontSize: 12, cursor: "pointer"
-                }}>{tag}</button>
-              ))}
-            </div>
-            <div style={{ fontSize: 11, color: "var(--fu-text-muted)", marginTop: 6 }}>Your menu will only show meals that match. You can change this anytime in Profile.</div>
           </>
         )}
 

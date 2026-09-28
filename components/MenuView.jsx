@@ -13,7 +13,7 @@ import { SLOT_ORDER } from "@/lib/constants";
 const MENU_WINDOW_LABEL = { monday: "Sunday through Wednesday", thursday: "Sunday through the following Sunday, the week before delivery" };
 const MENU_NEXT_OPEN_LABEL = { monday: "Sunday", thursday: "Sunday" };
 
-export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu, dietaryRestrictions }) {
+export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }) {
   const router = useRouter();
   const [activeMenu, setActiveMenu] = useState(
     initialMenu && MENUS[initialMenu] ? initialMenu :
@@ -32,11 +32,7 @@ export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu, 
   const isClosure = !!closureNoteFor?.[activeMenu];
   const hoursLeft = orderingOpen ? hoursUntilWindowCloses(activeMenu) : null;
   const closingSoon = hoursLeft !== null && hoursLeft <= 24;
-  const restrictions = dietaryRestrictions || [];
-  const menuMealsAll = meals.filter(m => mealIsOnMenu(m, activeMenu));
-  const menuMeals = restrictions.length === 0 ? menuMealsAll
-    : menuMealsAll.filter(m => restrictions.every(r => (m.dietary_tags || []).includes(r)));
-  const hiddenByRestrictions = menuMealsAll.length - menuMeals.length;
+  const menuMeals = meals.filter(m => mealIsOnMenu(m, activeMenu));
   const filtered = menuMeals.filter(m =>
     m.name.toLowerCase().includes(query.toLowerCase()) || m.category.toLowerCase().includes(query.toLowerCase())
   );
@@ -144,12 +140,6 @@ export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu, 
             <input placeholder="Search meals or category" value={query} onChange={e => setQuery(e.target.value)}
               style={{ border: "none", outline: "none", fontSize: 13.5, flex: 1, background: "transparent", color: "var(--fu-text)" }} />
           </div>
-
-          {hiddenByRestrictions > 0 && (
-            <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)", marginTop: 8 }}>
-              Filtered to match your dietary restrictions ({restrictions.join(", ")}) — {hiddenByRestrictions} meal{hiddenByRestrictions === 1 ? "" : "s"} hidden. Change this in Profile.
-            </div>
-          )}
 
           {grouped.length === 0 && (
             <div style={{ background: "var(--fu-card)", borderRadius: 18, padding: "20px 16px", textAlign: "center", color: "var(--fu-text-muted)", fontSize: 13, marginTop: 20 }}>

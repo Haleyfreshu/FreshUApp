@@ -1,12 +1,3 @@
--- Dietary restriction filtering: meals declare which restrictions they
--- satisfy, athletes declare which restrictions they have, and the menu
--- filters against the overlap.
-alter table public.meals
-  add column dietary_tags text[] not null default '{}';
-
-alter table public.profiles
-  add column dietary_restrictions text[] not null default '{}';
-
 -- Hydration tracking (own its own table rather than overloading
 -- daily_logs, since a water entry has no meal/macro shape).
 create table public.hydration_logs (

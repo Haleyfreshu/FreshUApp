@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { SmallField } from "@/components/Fields";
 import { MealOptionsEditor } from "@/components/MealOptionsEditor";
 import { createClient } from "@/lib/supabase/client";
-import { STAFF_STORAGE_BUCKET } from "@/lib/constants";
+import { STAFF_STORAGE_BUCKET, SLOT_ORDER } from "@/lib/constants";
 
 export function MealEditor({ meal, defaultDeliveryDay, onCancel, onSaved }) {
   const [form, setForm] = useState(meal || {
@@ -119,7 +119,13 @@ export function MealEditor({ meal, defaultDeliveryDay, onCancel, onSaved }) {
         </div>
 
         <SmallField label="Name" value={form.name} onChange={v => set("name", v.target.value)} />
-        <SmallField label="Category" value={form.category} onChange={v => set("category", v.target.value)} />
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--fu-text-muted)", marginBottom: 6 }}>Category</div>
+          <select value={form.category} onChange={e => set("category", e.target.value)}
+            style={{ width: "100%", padding: "11px 12px", borderRadius: 12, border: "1.5px solid var(--fu-border)", background: "var(--fu-card-alt)", color: "var(--fu-text)", fontSize: 13.5 }}>
+            {SLOT_ORDER.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
         <div style={{ display: "flex", gap: 10 }}>
           <SmallField label="Emoji" value={form.emoji} onChange={v => set("emoji", v.target.value)} />
           <SmallField label="Price ($)" type="number" value={form.price} onChange={v => set("price", v.target.value)} />

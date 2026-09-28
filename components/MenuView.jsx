@@ -33,16 +33,27 @@ export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }
   const filtered = menuMeals.filter(m =>
     m.name.toLowerCase().includes(query.toLowerCase()) || m.category.toLowerCase().includes(query.toLowerCase())
   );
-  const grouped = [...new Set(filtered.map(m => m.category))]
-    .sort((a, b) => {
-      const ai = SLOT_ORDER.indexOf(a);
-      const bi = SLOT_ORDER.indexOf(b);
+  // Category is free-typed on older meals, so "Dinner" and "Dinner " (or
+  // "dinner") would otherwise group separately — key groups off a
+  // trimmed/lowercased version and use the canonical SLOT_ORDER spelling
+  // as the displayed heading whenever one matches.
+  const normCat = (s) => (s || "").trim().toLowerCase();
+  const categoryMap = new Map();
+  filtered.forEach(m => {
+    const key = normCat(m.category);
+    if (!categoryMap.has(key)) categoryMap.set(key, []);
+    categoryMap.get(key).push(m);
+  });
+  const grouped = [...categoryMap.entries()]
+    .sort(([a], [b]) => {
+      const ai = SLOT_ORDER.findIndex(s => normCat(s) === a);
+      const bi = SLOT_ORDER.findIndex(s => normCat(s) === b);
       if (ai === -1 && bi === -1) return a.localeCompare(b);
       if (ai === -1) return 1;
       if (bi === -1) return -1;
       return ai - bi;
     })
-    .map(cat => [cat, filtered.filter(m => m.category === cat)]);
+    .map(([key, items]) => [SLOT_ORDER.find(s => normCat(s) === key) || items[0].category.trim(), items]);
   const cartIds = new Set(cart.map(c => c.id));
   const total = cart.reduce((s, m) => s + applyOptionsToMeal(m, m.selectedOptions || []).price, 0);
 

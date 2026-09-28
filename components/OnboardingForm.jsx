@@ -3,9 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { GOAL_PRESETS, SPORTS } from "@/lib/constants";
+import { calculateNutritionGoals } from "@/lib/nutritionCalc";
 import { AuthField } from "@/components/Fields";
 import { TrainingScheduleEditor } from "@/components/TrainingScheduleEditor";
 import { createClient } from "@/lib/supabase/client";
+
+const FALLBACK_GOAL = { calories: 2400, protein: 160, carbs: 250, fat: 70 };
 
 export function OnboardingForm({ userId }) {
   const router = useRouter();
@@ -13,19 +16,26 @@ export function OnboardingForm({ userId }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
-    school: "", sport: "", age: "", height: "", weight: "",
+    school: "", sport: "", sex: "", age: "", height: "", weight: "",
     goal: "Lean Performance", calorieGoal: 2400, proteinGoal: 160, carbGoal: 250, fatGoal: 70,
     events: [],
   });
   const steps = ["Basics", "Sport", "Goals", "Schedule"];
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const computedGoal = (g, overrides = {}) => {
+    const f = { ...form, ...overrides };
+    return calculateNutritionGoals({
+      sex: f.sex, age: Number(f.age), heightIn: Number(f.height), weightLb: Number(f.weight), sport: f.sport, goal: g,
+    }) || FALLBACK_GOAL;
+  };
   const selectGoal = (g) => {
-    const preset = GOAL_PRESETS[g];
+    const preset = computedGoal(g);
     setForm(f => ({ ...f, goal: g, calorieGoal: preset.calories, proteinGoal: preset.protein, carbGoal: preset.carbs, fatGoal: preset.fat }));
   };
 
   const canNext = () => {
-    if (step === 0) return form.school && form.age && form.height && form.weight;
+    if (step === 0) return form.school && form.sex && form.age && form.height && form.weight;
     if (step === 1) return form.sport;
     if (step === 2) return true;
     if (step === 3) return form.events.length > 0 && form.events.every(e => e.label.trim());
@@ -39,6 +49,7 @@ export function OnboardingForm({ userId }) {
     const { error: updateError } = await supabase.from("profiles").update({
       school: form.school,
       sport: form.sport,
+      sex: form.sex,
       age: Number(form.age),
       height: Number(form.height),
       weight: Number(form.weight),
@@ -56,7 +67,7 @@ export function OnboardingForm({ userId }) {
     }
 
     const { error: eventsError } = await supabase.from("training_events").insert(
-      form.events.map(e => ({ athlete_id: userId, day_of_week: e.day_of_week, label: e.label.trim(), event_time: e.event_time }))
+      form.events.map(e => ({ athlete_id: userId, day_of_week: e.day_of_week, label: e.label.trim(), event_time: e.event_time, is_game_day: !!e.is_game_day }))
     );
     setSaving(false);
     if (eventsError) {
@@ -86,6 +97,17 @@ export function OnboardingForm({ userId }) {
         {step === 0 && (
           <>
             <AuthField label="School" placeholder="e.g. Rowan University" value={form.school} onChange={e => set("school", e.target.value)} />
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--fu-label)", marginBottom: 8, marginTop: 4 }}>Sex</div>
+            <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+              {["female", "male"].map(s => (
+                <button key={s} onClick={() => set("sex", s)} style={{
+                  flex: 1, padding: "12px 10px", borderRadius: 14, textTransform: "capitalize",
+                  border: form.sex === s ? "2px solid #fff" : "1.5px solid var(--fu-border)",
+                  background: form.sex === s ? "var(--fu-card-alt)" : "var(--fu-card)", color: "var(--fu-text)", fontWeight: 700, fontSize: 13.5, cursor: "pointer"
+                }}>{s}</button>
+              ))}
+            </div>
+            <div style={{ fontSize: 11, color: "var(--fu-text-muted)", marginTop: -6, marginBottom: 14 }}>Used to personalize your calorie and macro targets — men and women have different baseline energy needs.</div>
             <div style={{ display: "flex", gap: 10 }}>
               <div style={{ flex: 1 }}><AuthField label="Age" type="number" placeholder="20" value={form.age} onChange={e => set("age", e.target.value)} /></div>
               <div style={{ flex: 1 }}><AuthField label="Height (in)" type="number" placeholder="70" value={form.height} onChange={e => set("height", e.target.value)} /></div>
@@ -107,18 +129,25 @@ export function OnboardingForm({ userId }) {
 
         {step === 2 && (
           <>
+            <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)", marginBottom: 14, lineHeight: 1.4 }}>
+              Personalized to your sex, age, height, weight, and sport — not a generic number. On days you tag as a game (in your training schedule), we&apos;ll automatically bump your carb target to fuel competition.
+            </div>
             <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--fu-label)", marginBottom: 8 }}>Nutrition goal</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 18 }}>
-              {Object.keys(GOAL_PRESETS).map(g => (
-                <button key={g} onClick={() => selectGoal(g)} style={{
-                  textAlign: "left", padding: "13px 14px", borderRadius: 14,
-                  border: form.goal === g ? "2px solid #fff" : "1.5px solid var(--fu-border)",
-                  background: form.goal === g ? "var(--fu-card-alt)" : "var(--fu-card)", cursor: "pointer"
-                }}>
-                  <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--fu-text)" }}>{g}</div>
-                  <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)", marginTop: 2 }}>{GOAL_PRESETS[g].calories} cal · {GOAL_PRESETS[g].protein}g protein</div>
-                </button>
-              ))}
+              {Object.keys(GOAL_PRESETS).map(g => {
+                const preview = computedGoal(g);
+                return (
+                  <button key={g} onClick={() => selectGoal(g)} style={{
+                    textAlign: "left", padding: "13px 14px", borderRadius: 14,
+                    border: form.goal === g ? "2px solid #fff" : "1.5px solid var(--fu-border)",
+                    background: form.goal === g ? "var(--fu-card-alt)" : "var(--fu-card)", cursor: "pointer"
+                  }}>
+                    <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--fu-text)" }}>{g}</div>
+                    <div style={{ fontSize: 11, color: "var(--fu-text-muted)", marginTop: 2 }}>{GOAL_PRESETS[g]}</div>
+                    <div style={{ fontSize: 11.5, color: "var(--fu-text-secondary)", marginTop: 4, fontWeight: 600 }}>{preview.calories} cal · {preview.protein}g protein · {preview.carbs}g carbs · {preview.fat}g fat</div>
+                  </button>
+                );
+              })}
             </div>
             <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--fu-label)", marginBottom: 8 }}>Daily targets (editable)</div>
             <div style={{ display: "flex", gap: 10 }}>
@@ -150,7 +179,10 @@ export function OnboardingForm({ userId }) {
         )}
         <button
           disabled={!canNext() || saving}
-          onClick={() => step === steps.length - 1 ? finish() : setStep(s => s + 1)}
+          onClick={() => {
+            if (step === 1) selectGoal(form.goal); // stats are complete now — refresh the personalized defaults
+            step === steps.length - 1 ? finish() : setStep(s => s + 1);
+          }}
           style={{ flex: 2, padding: "15px", borderRadius: 14, border: "none", background: canNext() ? "var(--fu-cta-bg)" : "var(--fu-card-alt)", color: canNext() ? "var(--fu-cta-text)" : "var(--fu-text-muted)", fontWeight: 800, cursor: canNext() ? "pointer" : "default" }}>
           {saving ? "Saving…" : step === steps.length - 1 ? "Finish setup" : "Continue"}
         </button>

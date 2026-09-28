@@ -11,6 +11,7 @@ import { addMinutes, minutesOfDay, timeStrFromMinutes, fmtTime } from "@/lib/for
 import { computeMealMinutes, DEFAULT_MEAL_MINUTES } from "@/lib/schedule";
 import { optionsLabel } from "@/lib/mealOptions";
 import { civilDateStr, MENUS } from "@/lib/orderWindow";
+import { calculateNutritionGoals } from "@/lib/nutritionCalc";
 import { createClient } from "@/lib/supabase/client";
 
 export function DashboardView({ profile, todayLog, weeklyMeals, weekEatenMealIds, todayEvents }) {
@@ -19,12 +20,21 @@ export function DashboardView({ profile, todayLog, weeklyMeals, weekEatenMealIds
   const [showLogFood, setShowLogFood] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
+  const isGameDay = todayEvents.some(ev => ev.is_game_day);
+  const gameDayGoals = useMemo(() => isGameDay ? calculateNutritionGoals({
+    sex: profile.sex, age: profile.age, heightIn: profile.height, weightLb: profile.weight,
+    sport: profile.sport, goal: profile.goal, dayType: "game",
+  }) : null, [isGameDay, profile]);
+  const targets = useMemo(() => gameDayGoals || {
+    calories: profile.calorie_goal, protein: profile.protein_goal, carbs: profile.carb_goal, fat: profile.fat_goal,
+  }, [gameDayGoals, profile]);
+
   const totals = useMemo(() => todayLog.reduce((acc, m) => ({
     calories: acc.calories + (m.calories || 0), protein: acc.protein + (m.protein || 0),
     carbs: acc.carbs + (m.carbs || 0), fat: acc.fat + (m.fat || 0),
   }), { calories: 0, protein: 0, carbs: 0, fat: 0 }), [todayLog]);
 
-  const score = useMemo(() => computeFuelScore(totals, profile), [totals, profile]);
+  const score = useMemo(() => computeFuelScore(totals, { calorie_goal: targets.calories, protein_goal: targets.protein, carb_goal: targets.carbs, fat_goal: targets.fat }), [totals, targets]);
   const state = BUDDY_STATES[fuelState(score)];
 
   const mealMinutes = useMemo(() => computeMealMinutes(todayEvents), [todayEvents]);
@@ -116,13 +126,18 @@ export function DashboardView({ profile, todayLog, weeklyMeals, weekEatenMealIds
       </div>
 
       <div style={{ background: "var(--fu-card)", borderRadius: 24, padding: "18px 18px 20px", marginTop: 16, boxShadow: "0 4px 20px rgba(0,0,0,0.35)" }}>
-        <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 15, color: "var(--fu-text)" }}>Today&apos;s Fuel</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 15, color: "var(--fu-text)" }}>Today&apos;s Fuel</div>
+          {gameDayGoals && (
+            <span style={{ fontSize: 10.5, fontWeight: 800, color: "var(--fu-cta-text)", background: "var(--fu-cta-bg)", padding: "3px 9px", borderRadius: 999, letterSpacing: 0.3 }}>GAME DAY · CARBS UP</span>
+          )}
+        </div>
         <div style={{ height: 2.5, background: "#fff", margin: "12px 0 2px", borderRadius: 1 }} />
         {[
-          ["Calories", totals.calories, profile.calorie_goal, ""],
-          ["Protein", totals.protein, profile.protein_goal, "g"],
-          ["Carbs", totals.carbs, profile.carb_goal, "g"],
-          ["Fat", totals.fat, profile.fat_goal, "g"],
+          ["Calories", totals.calories, targets.calories, ""],
+          ["Protein", totals.protein, targets.protein, "g"],
+          ["Carbs", totals.carbs, targets.carbs, "g"],
+          ["Fat", totals.fat, targets.fat, "g"],
         ].map(([label, current, goal, unit], i, arr) => (
           <div key={label}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "5px 0" }}>

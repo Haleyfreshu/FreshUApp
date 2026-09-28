@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
 import { weekOfLabel } from "@/lib/format";
 import { applyOptionsToMeal, optionsLabel } from "@/lib/mealOptions";
-import { isOrderingOpenFor, MENUS, mealIsOnMenu } from "@/lib/orderWindow";
+import { isOrderingOpenFor, closureFor, MENUS, mealIsOnMenu } from "@/lib/orderWindow";
 
 export async function POST(request) {
   const supabase = createClient();
@@ -15,6 +15,12 @@ export async function POST(request) {
   const { menuKey, items } = await request.json();
   if (!MENUS[menuKey]) {
     return NextResponse.json({ error: "Unknown menu." }, { status: 400 });
+  }
+
+  const { data: closures } = await supabase.from("menu_closures").select("*");
+  const closure = closureFor(menuKey, new Date(), closures || []);
+  if (closure) {
+    return NextResponse.json({ error: closure.note || `${MENUS[menuKey].label} is closed this week.` }, { status: 400 });
   }
 
   if (!isOrderingOpenFor(menuKey)) {

@@ -2,21 +2,27 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { UtensilsCrossed, Users, ClipboardList, Upload, Download, Pencil, Trash2 } from "lucide-react";
+import { UtensilsCrossed, Users, ClipboardList, CalendarOff, Upload, Download, Pencil, Trash2 } from "lucide-react";
 import { Tag } from "@/components/MealCard";
 import { FRESHU_LOGO } from "@/components/Shell";
 import { MealEditor } from "@/components/MealEditor";
 import { createClient } from "@/lib/supabase/client";
 import { optionsLabel } from "@/lib/mealOptions";
-import { MENUS, mealIsOnMenu } from "@/lib/orderWindow";
+import { MENUS, mealIsOnMenu, upcomingDeliveryDates } from "@/lib/orderWindow";
 
-export function AdminView({ initialMeals, athletes, orders }) {
+function fmtDeliveryDate(dateStr) {
+  return new Date(`${dateStr}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+
+export function AdminView({ initialMeals, athletes, orders, initialClosures }) {
   const router = useRouter();
   const [tab, setTab] = useState("meals");
   const [mealMenuFilter, setMealMenuFilter] = useState("monday");
   const [orderMenuFilter, setOrderMenuFilter] = useState("all");
   const [meals, setMeals] = useState(initialMeals);
   const [editing, setEditing] = useState(null); // null | 'new' | meal object
+  const [closures, setClosures] = useState(initialClosures || []);
+  const [newClosure, setNewClosure] = useState({ menu_key: "thursday", delivery_date: "", note: "No delivery this week." });
 
   const deleteMeal = async (id) => {
     if (!window.confirm("Remove this meal from the menu?")) return;
@@ -42,6 +48,26 @@ export function AdminView({ initialMeals, athletes, orders }) {
     const supabase = createClient();
     const { data, error } = await supabase.from("meals").update({ is_active: true }).eq("id", id).select().single();
     if (!error) setMeals(m => m.map(x => x.id === id ? data : x));
+  };
+
+  const addClosure = async () => {
+    if (!newClosure.delivery_date) return;
+    const supabase = createClient();
+    const { data, error } = await supabase.from("menu_closures").insert({
+      menu_key: newClosure.menu_key, delivery_date: newClosure.delivery_date, note: newClosure.note.trim() || null,
+    }).select().single();
+    if (!error) {
+      setClosures(c => [...c, data].sort((a, b) => a.delivery_date.localeCompare(b.delivery_date)));
+      setNewClosure(c => ({ ...c, delivery_date: "" }));
+    } else {
+      window.alert(`Couldn't close this delivery: ${error.message}`);
+    }
+  };
+
+  const deleteClosure = async (id) => {
+    const supabase = createClient();
+    const { error } = await supabase.from("menu_closures").delete().eq("id", id);
+    if (!error) setClosures(c => c.filter(x => x.id !== id));
   };
 
   const handleSaved = (saved) => {
@@ -90,6 +116,7 @@ export function AdminView({ initialMeals, athletes, orders }) {
           { key: "meals", label: "Meals", icon: UtensilsCrossed },
           { key: "athletes", label: "Athletes", icon: Users },
           { key: "orders", label: "Orders", icon: ClipboardList },
+          { key: "closures", label: "Closures", icon: CalendarOff },
         ].map(t => {
           const Icon = t.icon;
           return (
@@ -216,6 +243,66 @@ export function AdminView({ initialMeals, athletes, orders }) {
                 </div>
               ))}
             </div>
+          </>
+        )}
+
+        {tab === "closures" && (
+          <>
+            <div style={{ background: "var(--fu-card)", borderRadius: 16, padding: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.3)", marginBottom: 16 }}>
+              <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 15, color: "var(--fu-text)", marginBottom: 4 }}>Close a delivery</div>
+              <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)", marginBottom: 12 }}>Skips one specific week&apos;s delivery (holiday, supplier issue) — the following week resumes normally.</div>
+              <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                {[["monday", "Monday Delivery"], ["thursday", "Thursday Delivery"]].map(([key, label]) => (
+                  <button key={key} onClick={() => setNewClosure(c => ({ ...c, menu_key: key, delivery_date: "" }))} style={{
+                    flex: 1, padding: "9px 10px", borderRadius: 12,
+                    border: newClosure.menu_key === key ? "1.5px solid var(--fu-cta-bg)" : "1.5px solid var(--fu-border)",
+                    background: newClosure.menu_key === key ? "var(--fu-cta-bg)" : "var(--fu-card-alt)",
+                    color: newClosure.menu_key === key ? "var(--fu-cta-text)" : "var(--fu-text-muted)",
+                    fontWeight: 700, fontSize: 12.5, cursor: "pointer"
+                  }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <select value={newClosure.delivery_date} onChange={e => setNewClosure(c => ({ ...c, delivery_date: e.target.value }))}
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1.5px solid var(--fu-border)", background: "var(--fu-card-alt)", color: "var(--fu-text)", fontSize: 13, marginBottom: 10 }}>
+                <option value="">Choose a delivery date…</option>
+                {upcomingDeliveryDates(newClosure.menu_key, 6)
+                  .filter(d => !closures.some(c => c.menu_key === newClosure.menu_key && c.delivery_date === d))
+                  .map(d => <option key={d} value={d}>{fmtDeliveryDate(d)}</option>)}
+              </select>
+              <input value={newClosure.note} onChange={e => setNewClosure(c => ({ ...c, note: e.target.value }))} placeholder="Note athletes will see"
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1.5px solid var(--fu-border)", background: "var(--fu-card-alt)", color: "var(--fu-text)", fontSize: 13, marginBottom: 12 }} />
+              <button onClick={addClosure} disabled={!newClosure.delivery_date} style={{
+                width: "100%", padding: 12, borderRadius: 12, border: "none",
+                background: newClosure.delivery_date ? "var(--fu-cta-bg)" : "var(--fu-card-alt)",
+                color: newClosure.delivery_date ? "var(--fu-cta-text)" : "var(--fu-text-muted)",
+                fontWeight: 700, fontSize: 13, cursor: newClosure.delivery_date ? "pointer" : "default"
+              }}>
+                Close this delivery
+              </button>
+            </div>
+
+            <div style={{ fontSize: 13, color: "var(--fu-text-secondary)", marginBottom: 10 }}>{closures.length} upcoming closure{closures.length === 1 ? "" : "s"}</div>
+            {closures.length === 0 ? (
+              <div style={{ background: "var(--fu-card)", borderRadius: 16, padding: 20, textAlign: "center", color: "var(--fu-text-muted)", fontSize: 13 }}>
+                No deliveries are closed right now.
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {closures.map(c => (
+                  <div key={c.id} style={{ background: "var(--fu-card)", borderRadius: 16, padding: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.3)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--fu-text)" }}>{MENUS[c.menu_key]?.label} · {fmtDeliveryDate(c.delivery_date)}</div>
+                      {c.note && <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)", marginTop: 2 }}>{c.note}</div>}
+                    </div>
+                    <button onClick={() => deleteClosure(c.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, flexShrink: 0 }}>
+                      <Trash2 size={15} color="#FF5A5F" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>

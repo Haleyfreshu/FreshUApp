@@ -13,7 +13,7 @@ import { SLOT_ORDER } from "@/lib/constants";
 const MENU_WINDOW_LABEL = { monday: "Sunday through Wednesday", thursday: "Sunday through the following Sunday, the week before delivery" };
 const MENU_NEXT_OPEN_LABEL = { monday: "Sunday", thursday: "Sunday" };
 
-export function MenuView({ meals, orderingOpenFor, initialMenu }) {
+export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }) {
   const router = useRouter();
   const [activeMenu, setActiveMenu] = useState(
     initialMenu && MENUS[initialMenu] ? initialMenu :
@@ -105,7 +105,9 @@ export function MenuView({ meals, orderingOpenFor, initialMenu }) {
 
       {!orderingOpen && (
         <div style={{ background: "#FFB64822", border: "1px solid #FFB64855", borderRadius: 14, padding: "12px 14px", marginTop: 14, fontSize: 13, color: "var(--fu-text)", lineHeight: 1.4 }}>
-          {MENUS[activeMenu].label} ordering is open {MENU_WINDOW_LABEL[activeMenu]}. You can browse the menu, but adding meals and checkout are turned off until it reopens {MENU_NEXT_OPEN_LABEL[activeMenu]}.
+          {closureNoteFor?.[activeMenu]
+            ? closureNoteFor[activeMenu]
+            : `${MENUS[activeMenu].label} ordering is open ${MENU_WINDOW_LABEL[activeMenu]}. You can browse the menu, but adding meals and checkout are turned off until it reopens ${MENU_NEXT_OPEN_LABEL[activeMenu]}.`}
         </div>
       )}
 
@@ -170,7 +172,7 @@ export function MenuView({ meals, orderingOpenFor, initialMenu }) {
               disabled={cart.length === 0 || checkingOut || !orderingOpen}
               onClick={handleCheckout}
               style={{ width: "100%", padding: 15, borderRadius: 14, border: "none", background: cart.length && orderingOpen ? "var(--fu-cta-bg)" : "var(--fu-card-alt)", color: cart.length && orderingOpen ? "var(--fu-cta-text)" : "var(--fu-text-muted)", fontWeight: 800, fontSize: 15, cursor: cart.length && orderingOpen ? "pointer" : "default", opacity: checkingOut ? 0.7 : 1 }}>
-              {checkingOut ? "Redirecting to secure checkout…" : orderingOpen ? "Continue to checkout" : `Ordering opens ${MENU_NEXT_OPEN_LABEL[activeMenu]}`}
+              {checkingOut ? "Redirecting to secure checkout…" : orderingOpen ? "Continue to checkout" : closureNoteFor?.[activeMenu] ? "Delivery closed this week" : `Ordering opens ${MENU_NEXT_OPEN_LABEL[activeMenu]}`}
             </button>
           </div>
         </div>

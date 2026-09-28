@@ -28,6 +28,7 @@ export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }
   const [customizing, setCustomizing] = useState(null); // meal | null
 
   const orderingOpen = orderingOpenFor[activeMenu];
+  const isClosure = !!closureNoteFor?.[activeMenu];
   const menuMeals = meals.filter(m => mealIsOnMenu(m, activeMenu));
   const filtered = menuMeals.filter(m =>
     m.name.toLowerCase().includes(query.toLowerCase()) || m.category.toLowerCase().includes(query.toLowerCase())
@@ -105,36 +106,40 @@ export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }
 
       {!orderingOpen && (
         <div style={{ background: "#FFB64822", border: "1px solid #FFB64855", borderRadius: 14, padding: "12px 14px", marginTop: 14, fontSize: 13, color: "var(--fu-text)", lineHeight: 1.4 }}>
-          {closureNoteFor?.[activeMenu]
+          {isClosure
             ? closureNoteFor[activeMenu]
             : `${MENUS[activeMenu].label} ordering is open ${MENU_WINDOW_LABEL[activeMenu]}. You can browse the menu, but adding meals and checkout are turned off until it reopens ${MENU_NEXT_OPEN_LABEL[activeMenu]}.`}
         </div>
       )}
 
-      <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--fu-card)", borderRadius: 14, padding: "10px 14px", marginTop: 14, boxShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>
-        <Search size={16} color="var(--fu-text-muted)" />
-        <input placeholder="Search meals or category" value={query} onChange={e => setQuery(e.target.value)}
-          style={{ border: "none", outline: "none", fontSize: 13.5, flex: 1, background: "transparent", color: "var(--fu-text)" }} />
-      </div>
-
-      {grouped.length === 0 && (
-        <div style={{ background: "var(--fu-card)", borderRadius: 18, padding: "20px 16px", textAlign: "center", color: "var(--fu-text-muted)", fontSize: 13, marginTop: 20 }}>
-          No meals on the {MENUS[activeMenu].label.toLowerCase()} menu yet.
-        </div>
-      )}
-
-      {grouped.map(([cat, items]) => (
-        <div key={cat} style={{ marginTop: 20 }}>
-          <div style={{ fontWeight: 800, fontSize: 13.5, color: "var(--fu-label)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>{cat}</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {items.map(m => (
-              <MealCard key={m.id} meal={m}
-                onAdd={handleAdd} inCart={cartIds.has(m.id)} cartFull={!orderingOpen}
-                onOpen={() => router.push(`/menu/${m.id}?menu=${activeMenu}`)} />
-            ))}
+      {!isClosure && (
+        <>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--fu-card)", borderRadius: 14, padding: "10px 14px", marginTop: 14, boxShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>
+            <Search size={16} color="var(--fu-text-muted)" />
+            <input placeholder="Search meals or category" value={query} onChange={e => setQuery(e.target.value)}
+              style={{ border: "none", outline: "none", fontSize: 13.5, flex: 1, background: "transparent", color: "var(--fu-text)" }} />
           </div>
-        </div>
-      ))}
+
+          {grouped.length === 0 && (
+            <div style={{ background: "var(--fu-card)", borderRadius: 18, padding: "20px 16px", textAlign: "center", color: "var(--fu-text-muted)", fontSize: 13, marginTop: 20 }}>
+              No meals on the {MENUS[activeMenu].label.toLowerCase()} menu yet.
+            </div>
+          )}
+
+          {grouped.map(([cat, items]) => (
+            <div key={cat} style={{ marginTop: 20 }}>
+              <div style={{ fontWeight: 800, fontSize: 13.5, color: "var(--fu-label)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>{cat}</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {items.map(m => (
+                  <MealCard key={m.id} meal={m}
+                    onAdd={handleAdd} inCart={cartIds.has(m.id)} cartFull={!orderingOpen}
+                    onOpen={() => router.push(`/menu/${m.id}?menu=${activeMenu}`)} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </>
+      )}
 
       {showCart && (
         <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", flexDirection: "column", justifyContent: "flex-end", maxWidth: 430, margin: "0 auto" }}>
@@ -172,7 +177,7 @@ export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }
               disabled={cart.length === 0 || checkingOut || !orderingOpen}
               onClick={handleCheckout}
               style={{ width: "100%", padding: 15, borderRadius: 14, border: "none", background: cart.length && orderingOpen ? "var(--fu-cta-bg)" : "var(--fu-card-alt)", color: cart.length && orderingOpen ? "var(--fu-cta-text)" : "var(--fu-text-muted)", fontWeight: 800, fontSize: 15, cursor: cart.length && orderingOpen ? "pointer" : "default", opacity: checkingOut ? 0.7 : 1 }}>
-              {checkingOut ? "Redirecting to secure checkout…" : orderingOpen ? "Continue to checkout" : closureNoteFor?.[activeMenu] ? "Delivery closed this week" : `Ordering opens ${MENU_NEXT_OPEN_LABEL[activeMenu]}`}
+              {checkingOut ? "Redirecting to secure checkout…" : orderingOpen ? "Continue to checkout" : isClosure ? "Delivery closed this week" : `Ordering opens ${MENU_NEXT_OPEN_LABEL[activeMenu]}`}
             </button>
           </div>
         </div>

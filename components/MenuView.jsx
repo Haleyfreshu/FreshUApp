@@ -8,6 +8,7 @@ import { MealOptionsModal } from "@/components/MealOptionsModal";
 import { useCart } from "@/lib/cartContext";
 import { applyOptionsToMeal, optionsLabel } from "@/lib/mealOptions";
 import { MENUS, mealIsOnMenu } from "@/lib/orderWindow";
+import { SLOT_ORDER } from "@/lib/constants";
 
 const MENU_WINDOW_LABEL = { monday: "Sunday through Wednesday", thursday: "Sunday through the following Sunday, the week before delivery" };
 const MENU_NEXT_OPEN_LABEL = { monday: "Sunday", thursday: "Sunday" };
@@ -31,7 +32,16 @@ export function MenuView({ meals, orderingOpenFor, initialMenu }) {
   const filtered = menuMeals.filter(m =>
     m.name.toLowerCase().includes(query.toLowerCase()) || m.category.toLowerCase().includes(query.toLowerCase())
   );
-  const grouped = [...new Set(filtered.map(m => m.category))].map(cat => [cat, filtered.filter(m => m.category === cat)]);
+  const grouped = [...new Set(filtered.map(m => m.category))]
+    .sort((a, b) => {
+      const ai = SLOT_ORDER.indexOf(a);
+      const bi = SLOT_ORDER.indexOf(b);
+      if (ai === -1 && bi === -1) return a.localeCompare(b);
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    })
+    .map(cat => [cat, filtered.filter(m => m.category === cat)]);
   const cartIds = new Set(cart.map(c => c.id));
   const total = cart.reduce((s, m) => s + applyOptionsToMeal(m, m.selectedOptions || []).price, 0);
 

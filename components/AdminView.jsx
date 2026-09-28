@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { UtensilsCrossed, Users, ClipboardList, CalendarOff, Upload, Download, Pencil, Trash2 } from "lucide-react";
+import { UtensilsCrossed, Users, ClipboardList, CalendarOff, Percent, Upload, Download, Pencil, Trash2 } from "lucide-react";
 import { Tag } from "@/components/MealCard";
 import { FRESHU_LOGO } from "@/components/Shell";
 import { MealEditor } from "@/components/MealEditor";
@@ -14,7 +14,21 @@ function fmtDeliveryDate(dateStr) {
   return new Date(`${dateStr}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
-export function AdminView({ initialMeals, athletes, orders, initialClosures }) {
+function discountValueLabel(coupon) {
+  if (!coupon) return "";
+  if (coupon.percent_off) return `${coupon.percent_off}% off`;
+  if (coupon.amount_off) return `$${(coupon.amount_off / 100).toFixed(2)} off`;
+  return "";
+}
+
+function discountStatus(promo) {
+  if (!promo.active) return { label: "Deactivated", color: "var(--fu-text-muted)" };
+  if (promo.expires_at && promo.expires_at * 1000 < Date.now()) return { label: "Expired", color: "#FF5A5F" };
+  if (promo.max_redemptions && promo.times_redeemed >= promo.max_redemptions) return { label: "Fully used", color: "#FF5A5F" };
+  return { label: "Active", color: "#33D3A3" };
+}
+
+export function AdminView({ initialMeals, athletes, orders, initialClosures, initialDiscounts }) {
   const router = useRouter();
   const [tab, setTab] = useState("meals");
   const [mealMenuFilter, setMealMenuFilter] = useState("monday");
@@ -23,6 +37,10 @@ export function AdminView({ initialMeals, athletes, orders, initialClosures }) {
   const [editing, setEditing] = useState(null); // null | 'new' | meal object
   const [closures, setClosures] = useState(initialClosures || []);
   const [newClosure, setNewClosure] = useState({ menu_key: "thursday", delivery_date: "", note: "No delivery this week." });
+  const [discounts, setDiscounts] = useState(initialDiscounts || []);
+  const [newDiscount, setNewDiscount] = useState({ code: "", type: "percent", value: "", expiresAt: "", maxRedemptions: "" });
+  const [discountError, setDiscountError] = useState("");
+  const [savingDiscount, setSavingDiscount] = useState(false);
 
   const deleteMeal = async (id) => {
     if (!window.confirm("Remove this meal from the menu?")) return;
@@ -68,6 +86,36 @@ export function AdminView({ initialMeals, athletes, orders, initialClosures }) {
     const supabase = createClient();
     const { error } = await supabase.from("menu_closures").delete().eq("id", id);
     if (!error) setClosures(c => c.filter(x => x.id !== id));
+  };
+
+  const addDiscount = async () => {
+    setDiscountError("");
+    setSavingDiscount(true);
+    try {
+      const res = await fetch("/api/staff/discounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newDiscount),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Couldn't create code.");
+      setDiscounts(d => [data.promotionCode, ...d]);
+      setNewDiscount({ code: "", type: "percent", value: "", expiresAt: "", maxRedemptions: "" });
+    } catch (e) {
+      setDiscountError(e.message);
+    } finally {
+      setSavingDiscount(false);
+    }
+  };
+
+  const toggleDiscount = async (promo) => {
+    const res = await fetch(`/api/staff/discounts/${promo.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: !promo.active }),
+    });
+    const data = await res.json();
+    if (res.ok) setDiscounts(d => d.map(x => x.id === promo.id ? data.promotionCode : x));
   };
 
   const handleSaved = (saved) => {
@@ -117,6 +165,7 @@ export function AdminView({ initialMeals, athletes, orders, initialClosures }) {
           { key: "athletes", label: "Athletes", icon: Users },
           { key: "orders", label: "Orders", icon: ClipboardList },
           { key: "closures", label: "Closures", icon: CalendarOff },
+          { key: "discounts", label: "Discounts", icon: Percent },
         ].map(t => {
           const Icon = t.icon;
           return (
@@ -301,6 +350,88 @@ export function AdminView({ initialMeals, athletes, orders, initialClosures }) {
                     </button>
                   </div>
                 ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {tab === "discounts" && (
+          <>
+            <div style={{ background: "var(--fu-card)", borderRadius: 16, padding: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.3)", marginBottom: 16 }}>
+              <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 15, color: "var(--fu-text)", marginBottom: 4 }}>Create a discount code</div>
+              <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)", marginBottom: 12 }}>Athletes enter this on the secure checkout page — no extra steps in the app.</div>
+              <input value={newDiscount.code} onChange={e => setNewDiscount(d => ({ ...d, code: e.target.value.toUpperCase() }))} placeholder="Code, e.g. WELCOME10"
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1.5px solid var(--fu-border)", background: "var(--fu-card-alt)", color: "var(--fu-text)", fontSize: 13, marginBottom: 10, textTransform: "uppercase" }} />
+              <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                {[["percent", "% off"], ["amount", "$ off"]].map(([key, label]) => (
+                  <button key={key} onClick={() => setNewDiscount(d => ({ ...d, type: key }))} style={{
+                    flex: 1, padding: "9px 10px", borderRadius: 12,
+                    border: newDiscount.type === key ? "1.5px solid var(--fu-cta-bg)" : "1.5px solid var(--fu-border)",
+                    background: newDiscount.type === key ? "var(--fu-cta-bg)" : "var(--fu-card-alt)",
+                    color: newDiscount.type === key ? "var(--fu-cta-text)" : "var(--fu-text-muted)",
+                    fontWeight: 700, fontSize: 12.5, cursor: "pointer"
+                  }}>
+                    {label}
+                  </button>
+                ))}
+                <input type="number" value={newDiscount.value} onChange={e => setNewDiscount(d => ({ ...d, value: e.target.value }))}
+                  placeholder={newDiscount.type === "percent" ? "10" : "5.00"}
+                  style={{ flex: 1, padding: "9px 10px", borderRadius: 12, border: "1.5px solid var(--fu-border)", background: "var(--fu-card-alt)", color: "var(--fu-text)", fontSize: 13 }} />
+              </div>
+              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10.5, color: "var(--fu-text-muted)", marginBottom: 4 }}>Expires (optional)</div>
+                  <input type="date" value={newDiscount.expiresAt} onChange={e => setNewDiscount(d => ({ ...d, expiresAt: e.target.value }))}
+                    style={{ width: "100%", padding: "9px 10px", borderRadius: 10, border: "1.5px solid var(--fu-border)", background: "var(--fu-card-alt)", color: "var(--fu-text)", fontSize: 12.5 }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10.5, color: "var(--fu-text-muted)", marginBottom: 4 }}>Max uses (optional)</div>
+                  <input type="number" value={newDiscount.maxRedemptions} onChange={e => setNewDiscount(d => ({ ...d, maxRedemptions: e.target.value }))} placeholder="Unlimited"
+                    style={{ width: "100%", padding: "9px 10px", borderRadius: 10, border: "1.5px solid var(--fu-border)", background: "var(--fu-card-alt)", color: "var(--fu-text)", fontSize: 12.5 }} />
+                </div>
+              </div>
+              {discountError && <div style={{ color: "#FF5A5F", fontSize: 12.5, marginBottom: 10, fontWeight: 600 }}>{discountError}</div>}
+              <button onClick={addDiscount} disabled={!newDiscount.code || !newDiscount.value || savingDiscount} style={{
+                width: "100%", padding: 12, borderRadius: 12, border: "none",
+                background: newDiscount.code && newDiscount.value ? "var(--fu-cta-bg)" : "var(--fu-card-alt)",
+                color: newDiscount.code && newDiscount.value ? "var(--fu-cta-text)" : "var(--fu-text-muted)",
+                fontWeight: 700, fontSize: 13, cursor: newDiscount.code && newDiscount.value ? "pointer" : "default", opacity: savingDiscount ? 0.7 : 1
+              }}>
+                {savingDiscount ? "Creating…" : "Create code"}
+              </button>
+            </div>
+
+            <div style={{ fontSize: 13, color: "var(--fu-text-secondary)", marginBottom: 10 }}>{discounts.length} code{discounts.length === 1 ? "" : "s"}</div>
+            {discounts.length === 0 ? (
+              <div style={{ background: "var(--fu-card)", borderRadius: 16, padding: 20, textAlign: "center", color: "var(--fu-text-muted)", fontSize: 13 }}>
+                No discount codes yet.
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {discounts.map(promo => {
+                  const status = discountStatus(promo);
+                  return (
+                    <div key={promo.id} style={{ background: "var(--fu-card)", borderRadius: 16, padding: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.3)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 14, color: "var(--fu-text)", letterSpacing: 0.5 }}>{promo.code}</span>
+                          <span style={{ fontSize: 10.5, fontWeight: 800, color: status.color }}>{status.label}</span>
+                        </div>
+                        <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)", marginTop: 2 }}>
+                          {discountValueLabel(promo.coupon)} · used {promo.times_redeemed}{promo.max_redemptions ? `/${promo.max_redemptions}` : ""}
+                          {promo.expires_at && ` · expires ${new Date(promo.expires_at * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+                        </div>
+                      </div>
+                      <button onClick={() => toggleDiscount(promo)} style={{
+                        flexShrink: 0, padding: "7px 12px", borderRadius: 10, fontWeight: 700, fontSize: 11.5, cursor: "pointer",
+                        border: promo.active ? "1.5px solid rgba(255,90,95,0.35)" : "1.5px solid #fff",
+                        background: "var(--fu-card-alt)", color: promo.active ? "#FF5A5F" : "#fff"
+                      }}>
+                        {promo.active ? "Deactivate" : "Reactivate"}
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </>

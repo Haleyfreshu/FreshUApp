@@ -107,6 +107,7 @@ export async function POST(request) {
     mode: "payment",
     payment_method_types: ["card"],
     customer_email: profile?.email,
+    allow_promotion_codes: true,
     line_items: lines.map(({ meal, selectedOptions, totals }) => ({
       price_data: {
         currency: "usd",

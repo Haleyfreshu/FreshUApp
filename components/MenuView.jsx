@@ -26,6 +26,7 @@ export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }
   const [checkingOut, setCheckingOut] = useState(false);
   const [error, setError] = useState("");
   const [customizing, setCustomizing] = useState(null); // meal | null
+  const [bogoCode, setBogoCode] = useState("");
 
   const orderingOpen = orderingOpenFor[activeMenu];
   const isClosure = !!closureNoteFor?.[activeMenu];
@@ -75,6 +76,7 @@ export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }
         body: JSON.stringify({
           menuKey: activeMenu,
           items: cart.map(m => ({ mealId: m.id, optionIds: (m.selectedOptions || []).map(o => o.id) })),
+          bogoCode: bogoCode.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -179,6 +181,17 @@ export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }
                 );
               })}
             </div>
+            {cart.length > 0 && (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--fu-label)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>BOGO code</div>
+                <input
+                  placeholder="Enter code (optional)"
+                  value={bogoCode}
+                  onChange={e => setBogoCode(e.target.value)}
+                  style={{ width: "100%", boxSizing: "border-box", background: "var(--fu-card-alt)", border: "1px solid var(--fu-border)", borderRadius: 10, padding: "10px 12px", fontSize: 13, color: "var(--fu-text)", outline: "none" }}
+                />
+              </div>
+            )}
             {error && <div style={{ color: "#FF5A5F", fontSize: 12.5, marginTop: 8, fontWeight: 600 }}>{error}</div>}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, marginBottom: 12 }}>
               <span style={{ fontWeight: 700, color: "var(--fu-text-secondary)", fontSize: 13.5 }}>Total</span>

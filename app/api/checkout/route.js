@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
 import { weekOfLabel } from "@/lib/format";
 import { applyOptionsToMeal, optionsLabel } from "@/lib/mealOptions";
-import { isOrderingOpenFor, closureFor, MENUS, mealIsOnMenu } from "@/lib/orderWindow";
+import { isOrderingOpenFor, closureFor, civilDateStr, MENUS, mealIsOnMenu } from "@/lib/orderWindow";
 
 export async function POST(request) {
   const supabase = createClient();
@@ -12,7 +12,7 @@ export async function POST(request) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
-  const { menuKey, items } = await request.json();
+  const { menuKey, items, bogoCode } = await request.json();
   if (!MENUS[menuKey]) {
     return NextResponse.json({ error: "Unknown menu." }, { status: 400 });
   }
@@ -72,6 +72,37 @@ export async function POST(request) {
     lines.push({ meal, selectedOptions, totals: applyOptionsToMeal(meal, selectedOptions) });
   }
 
+  // BOGO codes are validated and applied here, entirely outside Stripe —
+  // exactly one line item (the cheapest) is zeroed out, regardless of how
+  // many meals are in the cart, and the code is kept in its own table so
+  // it can never be typed into Stripe's own promo-code field instead.
+  const codeTrimmed = (bogoCode || "").trim().toUpperCase();
+  let bogoApplied = false;
+  if (codeTrimmed) {
+    const { data: bogo } = await supabase.from("bogo_codes").select("*").eq("code", codeTrimmed).single();
+    if (!bogo || !bogo.active) {
+      return NextResponse.json({ error: "That code isn't valid." }, { status: 400 });
+    }
+    if (bogo.expires_at && bogo.expires_at < civilDateStr()) {
+      return NextResponse.json({ error: "That code has expired." }, { status: 400 });
+    }
+    if (bogo.max_redemptions && bogo.times_redeemed >= bogo.max_redemptions) {
+      return NextResponse.json({ error: "That code has already been fully used." }, { status: 400 });
+    }
+    if (lines.length < 2) {
+      return NextResponse.json({ error: "Add at least 2 meals to use a BOGO code." }, { status: 400 });
+    }
+    let cheapestIdx = 0;
+    for (let i = 1; i < lines.length; i++) {
+      if (lines[i].totals.price < lines[cheapestIdx].totals.price) cheapestIdx = i;
+    }
+    lines[cheapestIdx] = {
+      ...lines[cheapestIdx],
+      totals: { ...lines[cheapestIdx].totals, price: 0 },
+    };
+    bogoApplied = true;
+  }
+
   const { data: profile } = await supabase.from("profiles").select("name, email").eq("id", user.id).single();
 
   const total = lines.reduce((sum, l) => sum + l.totals.price, 0);
@@ -99,6 +130,10 @@ export async function POST(request) {
   const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
   if (itemsError) {
     return NextResponse.json({ error: itemsError.message }, { status: 500 });
+  }
+
+  if (bogoApplied) {
+    await supabase.rpc("redeem_bogo_code", { p_code: codeTrimmed });
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin;

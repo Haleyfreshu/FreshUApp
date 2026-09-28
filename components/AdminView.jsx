@@ -28,7 +28,7 @@ function discountStatus(promo) {
   return { label: "Active", color: "#33D3A3" };
 }
 
-export function AdminView({ initialMeals, athletes, orders, initialClosures, initialDiscounts }) {
+export function AdminView({ initialMeals, athletes, orders, initialClosures, initialDiscounts, initialBogoCodes }) {
   const router = useRouter();
   const [tab, setTab] = useState("meals");
   const [mealMenuFilter, setMealMenuFilter] = useState("monday");
@@ -41,6 +41,10 @@ export function AdminView({ initialMeals, athletes, orders, initialClosures, ini
   const [newDiscount, setNewDiscount] = useState({ code: "", type: "percent", value: "", expiresAt: "", maxRedemptions: "" });
   const [discountError, setDiscountError] = useState("");
   const [savingDiscount, setSavingDiscount] = useState(false);
+  const [bogoCodes, setBogoCodes] = useState(initialBogoCodes || []);
+  const [newBogoCode, setNewBogoCode] = useState({ code: "", expiresAt: "", maxRedemptions: "" });
+  const [bogoError, setBogoError] = useState("");
+  const [savingBogo, setSavingBogo] = useState(false);
 
   const deleteMeal = async (id) => {
     if (!window.confirm("Remove this meal from the menu?")) return;
@@ -116,6 +120,30 @@ export function AdminView({ initialMeals, athletes, orders, initialClosures, ini
     });
     const data = await res.json();
     if (res.ok) setDiscounts(d => d.map(x => x.id === promo.id ? data.promotionCode : x));
+  };
+
+  const addBogoCode = async () => {
+    setBogoError("");
+    setSavingBogo(true);
+    const supabase = createClient();
+    const { data, error } = await supabase.from("bogo_codes").insert({
+      code: newBogoCode.code.trim().toUpperCase(),
+      expires_at: newBogoCode.expiresAt || null,
+      max_redemptions: newBogoCode.maxRedemptions ? Number(newBogoCode.maxRedemptions) : null,
+    }).select().single();
+    if (!error) {
+      setBogoCodes(c => [data, ...c]);
+      setNewBogoCode({ code: "", expiresAt: "", maxRedemptions: "" });
+    } else {
+      setBogoError(error.message.includes("duplicate") ? "That code already exists." : error.message);
+    }
+    setSavingBogo(false);
+  };
+
+  const toggleBogoCode = async (code) => {
+    const supabase = createClient();
+    const { data, error } = await supabase.from("bogo_codes").update({ active: !code.active }).eq("id", code.id).select().single();
+    if (!error) setBogoCodes(c => c.map(x => x.id === code.id ? data : x));
   };
 
   const handleSaved = (saved) => {
@@ -428,6 +456,74 @@ export function AdminView({ initialMeals, athletes, orders, initialClosures, ini
                         background: "var(--fu-card-alt)", color: promo.active ? "#FF5A5F" : "#fff"
                       }}>
                         {promo.active ? "Deactivate" : "Reactivate"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div style={{ background: "var(--fu-card)", borderRadius: 16, padding: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.3)", margin: "24px 0 16px" }}>
+              <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 15, color: "var(--fu-text)", marginBottom: 4 }}>Create a BOGO code</div>
+              <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)", marginBottom: 12 }}>Buy one, get one free — exactly one meal is free per code, no matter how many meals are in the cart. Requires at least 2 meals in the cart to use.</div>
+              <input value={newBogoCode.code} onChange={e => setNewBogoCode(d => ({ ...d, code: e.target.value.toUpperCase() }))} placeholder="Code, e.g. BOGO2024"
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1.5px solid var(--fu-border)", background: "var(--fu-card-alt)", color: "var(--fu-text)", fontSize: 13, marginBottom: 10, textTransform: "uppercase" }} />
+              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10.5, color: "var(--fu-text-muted)", marginBottom: 4 }}>Expires (optional)</div>
+                  <input type="date" value={newBogoCode.expiresAt} onChange={e => setNewBogoCode(d => ({ ...d, expiresAt: e.target.value }))}
+                    style={{ width: "100%", padding: "9px 10px", borderRadius: 10, border: "1.5px solid var(--fu-border)", background: "var(--fu-card-alt)", color: "var(--fu-text)", fontSize: 12.5 }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10.5, color: "var(--fu-text-muted)", marginBottom: 4 }}>Max uses (optional)</div>
+                  <input type="number" value={newBogoCode.maxRedemptions} onChange={e => setNewBogoCode(d => ({ ...d, maxRedemptions: e.target.value }))} placeholder="Unlimited"
+                    style={{ width: "100%", padding: "9px 10px", borderRadius: 10, border: "1.5px solid var(--fu-border)", background: "var(--fu-card-alt)", color: "var(--fu-text)", fontSize: 12.5 }} />
+                </div>
+              </div>
+              {bogoError && <div style={{ color: "#FF5A5F", fontSize: 12.5, marginBottom: 10, fontWeight: 600 }}>{bogoError}</div>}
+              <button onClick={addBogoCode} disabled={!newBogoCode.code || savingBogo} style={{
+                width: "100%", padding: 12, borderRadius: 12, border: "none",
+                background: newBogoCode.code ? "var(--fu-cta-bg)" : "var(--fu-card-alt)",
+                color: newBogoCode.code ? "var(--fu-cta-text)" : "var(--fu-text-muted)",
+                fontWeight: 700, fontSize: 13, cursor: newBogoCode.code ? "pointer" : "default", opacity: savingBogo ? 0.7 : 1
+              }}>
+                {savingBogo ? "Creating…" : "Create BOGO code"}
+              </button>
+            </div>
+
+            <div style={{ fontSize: 13, color: "var(--fu-text-secondary)", marginBottom: 10 }}>{bogoCodes.length} BOGO code{bogoCodes.length === 1 ? "" : "s"}</div>
+            {bogoCodes.length === 0 ? (
+              <div style={{ background: "var(--fu-card)", borderRadius: 16, padding: 20, textAlign: "center", color: "var(--fu-text-muted)", fontSize: 13 }}>
+                No BOGO codes yet.
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {bogoCodes.map(code => {
+                  const expired = code.expires_at && code.expires_at < new Date().toISOString().slice(0, 10);
+                  const usedUp = code.max_redemptions && code.times_redeemed >= code.max_redemptions;
+                  const status = !code.active
+                    ? { label: "Deactivated", color: "var(--fu-text-muted)" }
+                    : expired ? { label: "Expired", color: "#FF5A5F" }
+                    : usedUp ? { label: "Fully used", color: "#FF5A5F" }
+                    : { label: "Active", color: "#33D3A3" };
+                  return (
+                    <div key={code.id} style={{ background: "var(--fu-card)", borderRadius: 16, padding: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.3)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 14, color: "var(--fu-text)", letterSpacing: 0.5 }}>{code.code}</span>
+                          <span style={{ fontSize: 10.5, fontWeight: 800, color: status.color }}>{status.label}</span>
+                        </div>
+                        <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)", marginTop: 2 }}>
+                          1 free meal · used {code.times_redeemed}{code.max_redemptions ? `/${code.max_redemptions}` : ""}
+                          {code.expires_at && ` · expires ${fmtDeliveryDate(code.expires_at)}`}
+                        </div>
+                      </div>
+                      <button onClick={() => toggleBogoCode(code)} style={{
+                        flexShrink: 0, padding: "7px 12px", borderRadius: 10, fontWeight: 700, fontSize: 11.5, cursor: "pointer",
+                        border: code.active ? "1.5px solid rgba(255,90,95,0.35)" : "1.5px solid #fff",
+                        background: "var(--fu-card-alt)", color: code.active ? "#FF5A5F" : "#fff"
+                      }}>
+                        {code.active ? "Deactivate" : "Reactivate"}
                       </button>
                     </div>
                   );

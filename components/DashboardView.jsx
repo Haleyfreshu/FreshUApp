@@ -140,6 +140,12 @@ export function DashboardView({ profile, todayLog, weeklyMeals, weekEatenMealIds
           }}>{state.label}</span>
         </div>
         <div style={{ fontSize: 13, marginTop: 12, lineHeight: 1.4, opacity: 0.7 }}>{state.msg}</div>
+        <button onClick={() => router.push("/history")} style={{
+          background: "none", border: "none", padding: 0, marginTop: 12, cursor: "pointer",
+          fontSize: 12.5, fontWeight: 700, color: "inherit", opacity: 0.7, textDecoration: "underline"
+        }}>
+          View previous days
+        </button>
       </div>
 
       <div style={{ background: "var(--fu-card)", borderRadius: 24, padding: "18px 18px 20px", marginTop: 16, boxShadow: "0 4px 20px rgba(0,0,0,0.35)" }}>

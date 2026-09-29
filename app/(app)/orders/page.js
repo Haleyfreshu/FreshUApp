@@ -6,10 +6,14 @@ export default async function OrdersPage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  // Unpaid orders (checkout started but never completed, or the Stripe
+  // session expired) shouldn't show up as if they were real orders — only
+  // ones Stripe actually confirmed payment for belong here.
   const { data: orders } = await supabase
     .from("orders")
     .select("*, order_items(*)")
     .eq("athlete_id", user.id)
+    .in("status", ["This Week", "Delivered"])
     .order("created_at", { ascending: false });
 
   const normalized = (orders || []).map(o => ({ ...o, items: o.order_items || [] }));

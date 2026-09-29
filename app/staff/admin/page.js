@@ -10,7 +10,9 @@ export default async function AdminPage() {
   const [{ data: meals }, { data: athletes }, { data: orders }, { data: closures }, { data: bogoCodes }, promos, { data: todayLogs }, { data: todayEvents }] = await Promise.all([
     supabase.from("meals").select("*, meal_option_groups(*, meal_options(*))").order("created_at", { ascending: true }),
     supabase.from("profiles").select("*").eq("role", "athlete").order("name", { ascending: true }),
-    supabase.from("orders").select("*, order_items(*)").order("created_at", { ascending: false }),
+    // Unpaid orders (abandoned checkout, expired Stripe session) aren't
+    // real orders — only show ones payment was actually confirmed for.
+    supabase.from("orders").select("*, order_items(*)").in("status", ["This Week", "Delivered"]).order("created_at", { ascending: false }),
     supabase.from("menu_closures").select("*").order("delivery_date", { ascending: true }),
     supabase.from("bogo_codes").select("*").order("created_at", { ascending: false }),
     getStripe().promotionCodes.list({ limit: 100, expand: ["data.coupon"] }),

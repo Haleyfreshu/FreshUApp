@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe";
 import { weekOfLabel } from "@/lib/format";
 import { applyOptionsToMeal, optionsLabel } from "@/lib/mealOptions";
@@ -203,7 +204,23 @@ export async function POST(request) {
     cancel_url: `${siteUrl}/checkout/cancel`,
   });
 
-  await supabase.from("orders").update({ stripe_session_id: session.id }).eq("id", order.id);
+  // The RLS policy on orders only allows staff to update a row (an
+  // athlete can insert their own order but not modify it afterward) —
+  // exactly right for preventing an athlete from editing their own
+  // total/status, but it also silently blocked this write (no error,
+  // just zero rows changed), which meant stripe_session_id never
+  // actually got saved and the webhook could never find the order to
+  // mark it paid. This one write is a trusted server-side bookkeeping
+  // step using a value straight from Stripe's own response, not
+  // athlete-supplied data, so it uses the admin client to bypass RLS
+  // rather than loosening the policy itself.
+  const { error: sessionIdError } = await createAdminClient()
+    .from("orders")
+    .update({ stripe_session_id: session.id })
+    .eq("id", order.id);
+  if (sessionIdError) {
+    console.error(`checkout: failed to save stripe_session_id for order ${order.id}:`, sessionIdError.message);
+  }
 
   return NextResponse.json({ url: session.url });
 }

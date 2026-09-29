@@ -27,6 +27,7 @@ export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }
   const [error, setError] = useState("");
   const [customizing, setCustomizing] = useState(null); // meal | null
   const [bogoCode, setBogoCode] = useState("");
+  const [discountCode, setDiscountCode] = useState("");
 
   const orderingOpen = orderingOpenFor[activeMenu];
   const isClosure = !!closureNoteFor?.[activeMenu];
@@ -79,6 +80,7 @@ export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }
           menuKey: activeMenu,
           items: cart.map(m => ({ mealId: m.id, optionIds: (m.selectedOptions || []).map(o => o.id) })),
           bogoCode: bogoCode.trim() || undefined,
+          discountCode: discountCode.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -190,14 +192,25 @@ export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }
               })}
             </div>
             {cart.length > 0 && (
-              <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--fu-label)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>BOGO code</div>
-                <input
-                  placeholder="Enter code (optional)"
-                  value={bogoCode}
-                  onChange={e => setBogoCode(e.target.value)}
-                  style={{ width: "100%", boxSizing: "border-box", background: "var(--fu-card-alt)", border: "1px solid var(--fu-border)", borderRadius: 10, padding: "10px 12px", fontSize: 13, color: "var(--fu-text)", outline: "none" }}
-                />
+              <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+                <div>
+                  <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--fu-label)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>BOGO code</div>
+                  <input
+                    placeholder="Enter code (optional)"
+                    value={bogoCode}
+                    onChange={e => setBogoCode(e.target.value)}
+                    style={{ width: "100%", boxSizing: "border-box", background: "var(--fu-card-alt)", border: "1px solid var(--fu-border)", borderRadius: 10, padding: "10px 12px", fontSize: 13, color: "var(--fu-text)", outline: "none" }}
+                  />
+                </div>
+                <div>
+                  <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--fu-label)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Discount code</div>
+                  <input
+                    placeholder="Enter code (optional)"
+                    value={discountCode}
+                    onChange={e => setDiscountCode(e.target.value)}
+                    style={{ width: "100%", boxSizing: "border-box", background: "var(--fu-card-alt)", border: "1px solid var(--fu-border)", borderRadius: 10, padding: "10px 12px", fontSize: 13, color: "var(--fu-text)", outline: "none" }}
+                  />
+                </div>
               </div>
             )}
             {error && <div style={{ color: "#FF5A5F", fontSize: 12.5, marginTop: 8, fontWeight: 600 }}>{error}</div>}

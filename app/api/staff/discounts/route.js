@@ -41,12 +41,16 @@ export async function POST(request) {
     }
     const coupon = await getStripe().coupons.create(couponParams);
 
+    // maxRedemptions here means "per customer", not Stripe's own
+    // max_redemptions (which caps total uses across every customer
+    // combined) — so it's stashed in metadata and enforced ourselves in
+    // the checkout API instead of being handed to Stripe.
     const promoParams = { coupon: coupon.id, code: codeTrimmed };
     if (expiresAt) {
       promoParams.expires_at = Math.floor(new Date(`${expiresAt}T23:59:59Z`).getTime() / 1000);
     }
     if (maxRedemptions) {
-      promoParams.max_redemptions = Number(maxRedemptions);
+      promoParams.metadata = { max_uses_per_customer: String(Number(maxRedemptions)) };
     }
     const promotionCode = await getStripe().promotionCodes.create(promoParams, { expand: ["coupon"] });
 

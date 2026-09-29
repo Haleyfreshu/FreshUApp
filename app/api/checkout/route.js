@@ -12,7 +12,7 @@ export async function POST(request) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
-  const { menuKey, items, bogoCode } = await request.json();
+  const { menuKey, items, bogoCode, discountCode } = await request.json();
   if (!MENUS[menuKey]) {
     return NextResponse.json({ error: "Unknown menu." }, { status: 400 });
   }
@@ -103,9 +103,50 @@ export async function POST(request) {
     bogoApplied = true;
   }
 
+  // Percent/dollar-off discount codes are looked up and validated here
+  // too (rather than left to Stripe's own hosted promo-code field) so a
+  // "max uses" cap can be enforced per athlete — Stripe's own
+  // max_redemptions only caps total uses across every customer combined,
+  // with no way to limit how many times one specific customer reuses a
+  // code. The discount itself is still applied by Stripe at checkout
+  // (via the promotion_code on the session), so Stripe computes/charges
+  // the exact discounted amount; the math here just mirrors that for our
+  // own stored order total.
+  const discountCodeTrimmed = (discountCode || "").trim().toUpperCase();
+  let discountPromo = null;
+  if (discountCodeTrimmed) {
+    const promos = await getStripe().promotionCodes.list({ code: discountCodeTrimmed, active: true, limit: 1, expand: ["data.coupon"] });
+    const promo = promos.data[0];
+    if (!promo) {
+      return NextResponse.json({ error: "That code isn't valid." }, { status: 400 });
+    }
+    if (promo.expires_at && promo.expires_at * 1000 < Date.now()) {
+      return NextResponse.json({ error: "That code has expired." }, { status: 400 });
+    }
+    const maxPerCustomer = Number(promo.metadata?.max_uses_per_customer || 0);
+    if (maxPerCustomer > 0) {
+      const { count } = await supabase
+        .from("discount_redemptions")
+        .select("id", { count: "exact", head: true })
+        .eq("code", discountCodeTrimmed)
+        .eq("athlete_id", user.id);
+      if ((count || 0) >= maxPerCustomer) {
+        return NextResponse.json({ error: "You've already used this code the maximum number of times." }, { status: 400 });
+      }
+    }
+    discountPromo = promo;
+  }
+
   const { data: profile } = await supabase.from("profiles").select("name, email").eq("id", user.id).single();
 
-  const total = lines.reduce((sum, l) => sum + l.totals.price, 0);
+  const subtotal = lines.reduce((sum, l) => sum + l.totals.price, 0);
+  let total = subtotal;
+  if (discountPromo) {
+    const coupon = discountPromo.coupon;
+    if (coupon.percent_off) total = subtotal * (1 - coupon.percent_off / 100);
+    else if (coupon.amount_off) total = Math.max(0, subtotal - coupon.amount_off / 100);
+    total = Math.round(total * 100) / 100;
+  }
   const weekOf = weekOfLabel();
 
   const { data: order, error: orderError } = await supabase.from("orders").insert({
@@ -135,6 +176,9 @@ export async function POST(request) {
   if (bogoApplied) {
     await supabase.rpc("redeem_bogo_code", { p_code: codeTrimmed });
   }
+  if (discountPromo) {
+    await supabase.from("discount_redemptions").insert({ code: discountCodeTrimmed, athlete_id: user.id, order_id: order.id });
+  }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin;
 
@@ -142,7 +186,6 @@ export async function POST(request) {
     mode: "payment",
     payment_method_types: ["card"],
     customer_email: profile?.email,
-    allow_promotion_codes: true,
     line_items: lines.map(({ meal, selectedOptions, totals }) => ({
       price_data: {
         currency: "usd",
@@ -154,6 +197,7 @@ export async function POST(request) {
       },
       quantity: 1,
     })),
+    ...(discountPromo ? { discounts: [{ promotion_code: discountPromo.id }] } : {}),
     metadata: { order_id: order.id, athlete_id: user.id },
     success_url: `${siteUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${siteUrl}/checkout/cancel`,

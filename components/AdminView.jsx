@@ -489,11 +489,12 @@ export function AdminView({ initialMeals, athletes, orders, initialClosures, ini
                     style={{ width: "100%", padding: "9px 10px", borderRadius: 10, border: "1.5px solid var(--fu-border)", background: "var(--fu-card-alt)", color: "var(--fu-text)", fontSize: 12.5 }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 10.5, color: "var(--fu-text-muted)", marginBottom: 4 }}>Max uses (optional)</div>
+                  <div style={{ fontSize: 10.5, color: "var(--fu-text-muted)", marginBottom: 4 }}>Max uses per customer (optional)</div>
                   <input type="number" value={newDiscount.maxRedemptions} onChange={e => setNewDiscount(d => ({ ...d, maxRedemptions: e.target.value }))} placeholder="Unlimited"
                     style={{ width: "100%", padding: "9px 10px", borderRadius: 10, border: "1.5px solid var(--fu-border)", background: "var(--fu-card-alt)", color: "var(--fu-text)", fontSize: 12.5 }} />
                 </div>
               </div>
+              <div style={{ fontSize: 10.5, color: "var(--fu-text-muted)", marginBottom: 10, lineHeight: 1.4 }}>This caps how many times each individual athlete can use the code — not a total across everyone.</div>
               {discountError && <div style={{ color: "#FF5A5F", fontSize: 12.5, marginBottom: 10, fontWeight: 600 }}>{discountError}</div>}
               <button onClick={addDiscount} disabled={!newDiscount.code || !newDiscount.value || savingDiscount} style={{
                 width: "100%", padding: 12, borderRadius: 12, border: "none",
@@ -522,7 +523,8 @@ export function AdminView({ initialMeals, athletes, orders, initialClosures, ini
                           <span style={{ fontSize: 10.5, fontWeight: 800, color: status.color }}>{status.label}</span>
                         </div>
                         <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)", marginTop: 2 }}>
-                          {discountValueLabel(promo.coupon)} · used {promo.times_redeemed}{promo.max_redemptions ? `/${promo.max_redemptions}` : ""}
+                          {discountValueLabel(promo.coupon)} · used {promo.times_redeemed} time{promo.times_redeemed === 1 ? "" : "s"} total
+                          {promo.metadata?.max_uses_per_customer && ` · max ${promo.metadata.max_uses_per_customer}/customer`}
                           {promo.expires_at && ` · expires ${new Date(promo.expires_at * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
                         </div>
                       </div>

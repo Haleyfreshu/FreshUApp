@@ -165,7 +165,7 @@ export function AdminView({ initialMeals, athletes, orders, initialClosures, ini
     const { data, error } = await supabase.from("bogo_codes").insert({
       code: newBogoCode.code.trim().toUpperCase(),
       expires_at: newBogoCode.expiresAt || null,
-      max_redemptions: newBogoCode.maxRedemptions ? Number(newBogoCode.maxRedemptions) : null,
+      max_uses_per_customer: newBogoCode.maxRedemptions ? Number(newBogoCode.maxRedemptions) : null,
     }).select().single();
     if (!error) {
       setBogoCodes(c => [data, ...c]);
@@ -553,11 +553,12 @@ export function AdminView({ initialMeals, athletes, orders, initialClosures, ini
                     style={{ width: "100%", padding: "9px 10px", borderRadius: 10, border: "1.5px solid var(--fu-border)", background: "var(--fu-card-alt)", color: "var(--fu-text)", fontSize: 12.5 }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 10.5, color: "var(--fu-text-muted)", marginBottom: 4 }}>Max uses (optional)</div>
+                  <div style={{ fontSize: 10.5, color: "var(--fu-text-muted)", marginBottom: 4 }}>Max uses per customer (optional)</div>
                   <input type="number" value={newBogoCode.maxRedemptions} onChange={e => setNewBogoCode(d => ({ ...d, maxRedemptions: e.target.value }))} placeholder="Unlimited"
                     style={{ width: "100%", padding: "9px 10px", borderRadius: 10, border: "1.5px solid var(--fu-border)", background: "var(--fu-card-alt)", color: "var(--fu-text)", fontSize: 12.5 }} />
                 </div>
               </div>
+              <div style={{ fontSize: 10.5, color: "var(--fu-text-muted)", marginBottom: 10, lineHeight: 1.4 }}>This caps how many times each individual athlete can use the code — not a total across everyone. Enter 1 so every athlete gets exactly one use; leave blank for no per-athlete limit.</div>
               {bogoError && <div style={{ color: "#FF5A5F", fontSize: 12.5, marginBottom: 10, fontWeight: 600 }}>{bogoError}</div>}
               <button onClick={addBogoCode} disabled={!newBogoCode.code || savingBogo} style={{
                 width: "100%", padding: 12, borderRadius: 12, border: "none",
@@ -578,11 +579,9 @@ export function AdminView({ initialMeals, athletes, orders, initialClosures, ini
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {bogoCodes.map(code => {
                   const expired = code.expires_at && code.expires_at < new Date().toISOString().slice(0, 10);
-                  const usedUp = code.max_redemptions && code.times_redeemed >= code.max_redemptions;
                   const status = !code.active
                     ? { label: "Deactivated", color: "var(--fu-text-muted)" }
                     : expired ? { label: "Expired", color: "#FF5A5F" }
-                    : usedUp ? { label: "Fully used", color: "#FF5A5F" }
                     : { label: "Active", color: "#33D3A3" };
                   return (
                     <div key={code.id} style={{ background: "var(--fu-card)", borderRadius: 16, padding: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.3)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
@@ -592,7 +591,8 @@ export function AdminView({ initialMeals, athletes, orders, initialClosures, ini
                           <span style={{ fontSize: 10.5, fontWeight: 800, color: status.color }}>{status.label}</span>
                         </div>
                         <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)", marginTop: 2 }}>
-                          1 free meal · used {code.times_redeemed}{code.max_redemptions ? `/${code.max_redemptions}` : ""}
+                          1 free meal · used {code.times_redeemed} time{code.times_redeemed === 1 ? "" : "s"} total
+                          {code.max_uses_per_customer && ` · max ${code.max_uses_per_customer}/customer`}
                           {code.expires_at && ` · expires ${fmtDeliveryDate(code.expires_at)}`}
                         </div>
                       </div>

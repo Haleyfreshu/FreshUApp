@@ -87,8 +87,15 @@ export async function POST(request) {
     if (bogo.expires_at && bogo.expires_at < civilDateStr()) {
       return NextResponse.json({ error: "That code has expired." }, { status: 400 });
     }
-    if (bogo.max_redemptions && bogo.times_redeemed >= bogo.max_redemptions) {
-      return NextResponse.json({ error: "That code has already been fully used." }, { status: 400 });
+    if (bogo.max_uses_per_customer) {
+      const { count } = await supabase
+        .from("bogo_redemptions")
+        .select("id", { count: "exact", head: true })
+        .eq("code", codeTrimmed)
+        .eq("athlete_id", user.id);
+      if ((count || 0) >= bogo.max_uses_per_customer) {
+        return NextResponse.json({ error: "You've already used this code the maximum number of times." }, { status: 400 });
+      }
     }
     if (lines.length < 2) {
       return NextResponse.json({ error: "Add at least 2 meals to use a BOGO code." }, { status: 400 });
@@ -176,6 +183,7 @@ export async function POST(request) {
 
   if (bogoApplied) {
     await supabase.rpc("redeem_bogo_code", { p_code: codeTrimmed });
+    await supabase.from("bogo_redemptions").insert({ code: codeTrimmed, athlete_id: user.id, order_id: order.id });
   }
   if (discountPromo) {
     await supabase.from("discount_redemptions").insert({ code: discountCodeTrimmed, athlete_id: user.id, order_id: order.id });

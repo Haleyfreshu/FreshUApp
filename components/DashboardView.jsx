@@ -8,9 +8,9 @@ import { FRESHU_LOGO } from "@/components/Shell";
 import { LogFoodModal } from "@/components/LogFoodModal";
 import { BUDDY_STATES, fuelState, computeFuelScore } from "@/lib/fuel";
 import { addMinutes, minutesOfDay, timeStrFromMinutes, fmtTime } from "@/lib/format";
-import { computeMealMinutes, DEFAULT_MEAL_MINUTES } from "@/lib/schedule";
+import { computeMealMinutes, DEFAULT_MEAL_MINUTES, expectedFractionByNow, mostRecentMealSlot } from "@/lib/schedule";
 import { optionsLabel } from "@/lib/mealOptions";
-import { civilDateStr, MENUS } from "@/lib/orderWindow";
+import { civilDateStr, nowMinutesOfDay, MENUS } from "@/lib/orderWindow";
 import { calculateNutritionGoals, calculateHydrationTarget } from "@/lib/nutritionCalc";
 import { createClient } from "@/lib/supabase/client";
 
@@ -37,15 +37,29 @@ export function DashboardView({ profile, todayLog, weeklyMeals, weekEatenMealIds
     carbs: acc.carbs + (m.carbs || 0), fat: acc.fat + (m.fat || 0),
   }), { calories: 0, protein: 0, carbs: 0, fat: 0 }), [todayLog]);
 
-  const score = useMemo(() => computeFuelScore(totals, { calorie_goal: targets.calories, protein_goal: targets.protein, carb_goal: targets.carbs, fat_goal: targets.fat }), [totals, targets]);
+  const mealMinutes = useMemo(() => computeMealMinutes(todayEvents), [todayEvents]);
+  // How much of the day's targets should realistically be eaten by right
+  // now (not by midnight) — a good breakfast alone can't hit 100% of the
+  // day's numbers, so scoring against the whole day would always read as
+  // "under fueled" until dinner. Pacing against meals that have already
+  // happened fixes that.
+  const nowMinutes = nowMinutesOfDay();
+  const expectedFraction = useMemo(() => expectedFractionByNow(mealMinutes, nowMinutes), [mealMinutes, nowMinutes]);
+  const dueMeal = useMemo(() => mostRecentMealSlot(mealMinutes, nowMinutes), [mealMinutes, nowMinutes]);
+
+  const score = useMemo(
+    () => computeFuelScore(totals, { calorie_goal: targets.calories, protein_goal: targets.protein, carb_goal: targets.carbs, fat_goal: targets.fat }, expectedFraction),
+    [totals, targets, expectedFraction]
+  );
   const state = BUDDY_STATES[fuelState(score)];
+  const behindPace = ["under", "needs"].includes(fuelState(score));
+  const stateMsg = behindPace && dueMeal ? `It's ${dueMeal} time — grab something to stay fueled.` : state.msg;
 
   const waterOz = useMemo(() => (todayHydration || []).reduce((sum, l) => sum + l.ounces, 0), [todayHydration]);
   const waterTarget = useMemo(() => calculateHydrationTarget({
     weightLb: profile.weight, sport: profile.sport, dayType: isGameDay ? "game" : "training",
   }), [profile, isGameDay]);
 
-  const mealMinutes = useMemo(() => computeMealMinutes(todayEvents), [todayEvents]);
   const scheduleAdjusted = useMemo(
     () => Object.keys(mealMinutes).some(k => mealMinutes[k] !== DEFAULT_MEAL_MINUTES[k]),
     [mealMinutes]
@@ -139,7 +153,7 @@ export function DashboardView({ profile, todayLog, weeklyMeals, weekEatenMealIds
             borderRadius: 999, color: "#fff", background: state.color, whiteSpace: "nowrap"
           }}>{state.label}</span>
         </div>
-        <div style={{ fontSize: 13, marginTop: 12, lineHeight: 1.4, opacity: 0.7 }}>{state.msg}</div>
+        <div style={{ fontSize: 13, marginTop: 12, lineHeight: 1.4, opacity: 0.7 }}>{stateMsg}</div>
         <button onClick={() => router.push("/history")} style={{
           background: "none", border: "none", padding: 0, marginTop: 12, cursor: "pointer",
           fontSize: 12.5, fontWeight: 700, color: "inherit", opacity: 0.7, textDecoration: "underline"

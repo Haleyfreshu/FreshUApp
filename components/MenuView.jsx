@@ -20,7 +20,7 @@ export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }
     orderingOpenFor.monday && !orderingOpenFor.thursday ? "monday" :
     orderingOpenFor.thursday && !orderingOpenFor.monday ? "thursday" : "monday"
   );
-  const { cart, addToCart, removeFromCart } = useCart(activeMenu);
+  const { cart, addToCart, removeFromCart, incrementQty, decrementQty } = useCart(activeMenu);
   const [query, setQuery] = useState("");
   const [showCart, setShowCart] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
@@ -58,8 +58,9 @@ export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }
       return ai - bi;
     })
     .map(([key, items]) => [SLOT_ORDER.find(s => normCat(s) === key) || items[0].category.trim(), items]);
-  const cartIds = new Set(cart.map(c => c.id));
-  const total = cart.reduce((s, m) => s + applyOptionsToMeal(m, m.selectedOptions || []).price, 0);
+  const qtyByMealId = cart.reduce((map, m) => ({ ...map, [m.id]: (map[m.id] || 0) + (m.quantity || 1) }), {});
+  const totalUnits = cart.reduce((s, m) => s + (m.quantity || 1), 0);
+  const total = cart.reduce((s, m) => s + applyOptionsToMeal(m, m.selectedOptions || []).price * (m.quantity || 1), 0);
 
   const handleAdd = (meal) => {
     if (meal.meal_option_groups?.length) {
@@ -78,7 +79,9 @@ export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           menuKey: activeMenu,
-          items: cart.map(m => ({ mealId: m.id, optionIds: (m.selectedOptions || []).map(o => o.id) })),
+          items: cart.flatMap(m =>
+            Array.from({ length: m.quantity || 1 }, () => ({ mealId: m.id, optionIds: (m.selectedOptions || []).map(o => o.id) }))
+          ),
           bogoCode: bogoCode.trim() || undefined,
           discountCode: discountCode.trim() || undefined,
         }),
@@ -101,7 +104,7 @@ export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }
           display: "flex", alignItems: "center", gap: 6
         }}>
           <ShoppingBag size={16} color="var(--fu-cta-text)" />
-          <span style={{ color: "var(--fu-cta-text)", fontWeight: 700, fontSize: 12.5 }}>{cart.length}</span>
+          <span style={{ color: "var(--fu-cta-text)", fontWeight: 700, fontSize: 12.5 }}>{totalUnits}</span>
         </button>
       </div>
 
@@ -119,7 +122,7 @@ export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }
           </button>
         ))}
       </div>
-      <div style={{ fontSize: 13, color: "var(--fu-text-secondary)", marginTop: 10 }}>{cart.length} meal{cart.length === 1 ? "" : "s"} selected for {MENUS[activeMenu].label.toLowerCase()}.</div>
+      <div style={{ fontSize: 13, color: "var(--fu-text-secondary)", marginTop: 10 }}>{totalUnits} meal{totalUnits === 1 ? "" : "s"} selected for {MENUS[activeMenu].label.toLowerCase()}.</div>
 
       {!orderingOpen && (
         <div style={{ background: "#FFB64822", border: "1px solid #FFB64855", borderRadius: 14, padding: "12px 14px", marginTop: 14, fontSize: 13, color: "var(--fu-text)", lineHeight: 1.4 }}>
@@ -155,7 +158,7 @@ export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {items.map(m => (
                   <MealCard key={m.id} meal={m}
-                    onAdd={handleAdd} inCart={cartIds.has(m.id)} cartFull={!orderingOpen}
+                    onAdd={handleAdd} qtyInCart={qtyByMealId[m.id] || 0} cartFull={!orderingOpen}
                     onOpen={() => router.push(`/menu/${m.id}?menu=${activeMenu}`)} />
                 ))}
               </div>
@@ -176,17 +179,23 @@ export function MenuView({ meals, orderingOpenFor, closureNoteFor, initialMenu }
               {cart.length === 0 && <div style={{ color: "var(--fu-text-muted)", fontSize: 13.5, textAlign: "center", padding: "30px 0" }}>Your cart is empty.</div>}
               {cart.map(m => {
                 const itemTotals = applyOptionsToMeal(m, m.selectedOptions || []);
+                const qty = m.quantity || 1;
                 return (
-                  <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: "1px solid var(--fu-border)" }}>
+                  <div key={m.cartItemId} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: "1px solid var(--fu-border)" }}>
                     <div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--fu-card-alt)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{m.emoji}</div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 700, fontSize: 13, color: "var(--fu-text)" }}>{m.name}</div>
                       {m.selectedOptions?.length > 0 && (
                         <div style={{ fontSize: 11, color: "var(--fu-text-secondary)", marginTop: 1 }}>{optionsLabel(m.selectedOptions)}</div>
                       )}
-                      <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)" }}>${itemTotals.price.toFixed(2)}</div>
+                      <div style={{ fontSize: 11.5, color: "var(--fu-text-muted)" }}>${itemTotals.price.toFixed(2)} each · ${(itemTotals.price * qty).toFixed(2)} total</div>
                     </div>
-                    <button onClick={() => removeFromCart(m.id)} style={{ background: "none", border: "none", cursor: "pointer" }}><Trash2 size={16} color="#FF5A5F" /></button>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                      <button onClick={() => decrementQty(m.cartItemId)} style={{ width: 26, height: 26, borderRadius: 8, border: "1px solid var(--fu-border)", background: "var(--fu-card-alt)", color: "var(--fu-text)", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+                      <span style={{ fontWeight: 700, fontSize: 13, color: "var(--fu-text)", minWidth: 14, textAlign: "center" }}>{qty}</span>
+                      <button onClick={() => incrementQty(m.cartItemId)} style={{ width: 26, height: 26, borderRadius: 8, border: "1px solid var(--fu-border)", background: "var(--fu-card-alt)", color: "var(--fu-text)", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+                    </div>
+                    <button onClick={() => removeFromCart(m.cartItemId)} style={{ background: "none", border: "none", cursor: "pointer" }}><Trash2 size={16} color="#FF5A5F" /></button>
                   </div>
                 );
               })}

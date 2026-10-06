@@ -32,7 +32,10 @@ export async function POST(request) {
     return NextResponse.json({ error: "Choose at least 1 meal." }, { status: 400 });
   }
 
-  const mealIds = items.map((it) => it.mealId);
+  // Deduped — a cart can now hold multiple units of the same meal, which
+  // would otherwise make the "every id came back" check below fail (the
+  // query naturally returns one row per distinct id, not one per cart unit).
+  const mealIds = [...new Set(items.map((it) => it.mealId))];
 
   // Re-fetch prices/details from the DB rather than trusting the client cart payload.
   const { data: meals, error: mealsError } = await supabase

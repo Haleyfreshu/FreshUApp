@@ -6,7 +6,7 @@ export function Tag({ label }) {
   return <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--fu-label)", background: "var(--fu-card-alt)", padding: "3px 8px", borderRadius: 8 }}>{label}</span>;
 }
 
-export function MealCard({ meal, onEat, eaten, onAdd, inCart, cartFull, compact, onOpen }) {
+export function MealCard({ meal, onEat, eaten, onAdd, qtyInCart = 0, cartFull, compact, onOpen }) {
   return (
     <div style={{ background: "var(--fu-card)", borderRadius: 20, padding: 14, boxShadow: "0 2px 14px rgba(0,0,0,0.35)" }}>
       <div onClick={onOpen} style={{ display: "flex", gap: 12, alignItems: compact ? "center" : "flex-start", cursor: onOpen ? "pointer" : "default" }}>
@@ -51,15 +51,25 @@ export function MealCard({ meal, onEat, eaten, onAdd, inCart, cartFull, compact,
           </button>
         )}
         {onAdd && (
-          <button onClick={() => onAdd(meal)} disabled={inCart || cartFull}
-            style={{
-              flex: 1, padding: "9px 10px", borderRadius: 12, border: inCart ? "1.5px solid var(--fu-cta-bg)" : "1.5px solid #fff",
-              background: inCart ? "var(--fu-cta-bg)" : "transparent", color: inCart ? "var(--fu-cta-text)" : "#fff",
-              fontWeight: 700, fontSize: 12.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-              cursor: cartFull && !inCart ? "not-allowed" : "pointer", opacity: cartFull && !inCart ? 0.5 : 1
-            }}>
-            {inCart ? <><Check size={14} /> In Cart</> : <><Plus size={14} /> Add</>}
-          </button>
+          <>
+            <button onClick={() => onAdd(meal)} disabled={cartFull}
+              style={{
+                flex: 1, padding: "9px 10px", borderRadius: 12, border: "1.5px solid #fff",
+                background: "transparent", color: "#fff",
+                fontWeight: 700, fontSize: 12.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                cursor: cartFull ? "not-allowed" : "pointer", opacity: cartFull ? 0.5 : 1
+              }}>
+              <Plus size={14} /> Add
+            </button>
+            {qtyInCart > 0 && (
+              <span style={{
+                background: "var(--fu-cta-bg)", color: "var(--fu-cta-text)", fontWeight: 800, fontSize: 12.5,
+                borderRadius: 12, padding: "9px 12px", display: "flex", alignItems: "center", gap: 5, flexShrink: 0
+              }}>
+                <Check size={14} /> ×{qtyInCart}
+              </span>
+            )}
+          </>
         )}
       </div>
     </div>

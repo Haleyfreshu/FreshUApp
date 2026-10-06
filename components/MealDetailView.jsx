@@ -18,10 +18,13 @@ export function MealDetailView({ meal, initialMenu, orderingOpenFor }) {
   const { groups, selections, pickSingle, toggleMulti, selectedOptions, missingRequired } = useMealOptionsSelection(meal);
 
   const orderingOpen = orderingOpenFor[menuKey];
-  const inCart = cart.some(c => c.id === meal.id);
+  const optionsKey = (opts) => (opts || []).map(o => o.id).sort().join(",");
+  const qtyInCart = cart
+    .filter(c => c.id === meal.id && optionsKey(c.selectedOptions) === optionsKey(selectedOptions))
+    .reduce((sum, c) => sum + (c.quantity || 1), 0);
   const hasOptions = groups.length > 0;
   const totals = applyOptionsToMeal(meal, selectedOptions);
-  const canAdd = orderingOpen && !inCart && !(hasOptions && missingRequired);
+  const canAdd = orderingOpen && !(hasOptions && missingRequired);
 
   return (
     <div>
@@ -88,13 +91,18 @@ export function MealDetailView({ meal, initialMenu, orderingOpenFor }) {
 
         <button onClick={() => addToCart(meal, selectedOptions)} disabled={!canAdd}
           style={{
-            width: "100%", marginTop: 20, padding: "13px 10px", borderRadius: 14, border: inCart ? "1.5px solid var(--fu-cta-bg)" : "1.5px solid #fff",
-            background: inCart ? "var(--fu-cta-bg)" : "transparent", color: inCart ? "var(--fu-cta-text)" : "#fff",
+            width: "100%", marginTop: 20, padding: "13px 10px", borderRadius: 14, border: "1.5px solid #fff",
+            background: "transparent", color: "#fff",
             fontWeight: 800, fontSize: 13.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-            cursor: canAdd ? "pointer" : "not-allowed", opacity: !canAdd && !inCart ? 0.5 : 1
+            cursor: canAdd ? "pointer" : "not-allowed", opacity: canAdd ? 1 : 0.5
           }}>
-          {inCart ? <><Check size={16} /> In Cart</> : <><Plus size={16} /> Add to Cart — ${totals.price.toFixed(2)}</>}
+          <Plus size={16} /> Add to Cart — ${totals.price.toFixed(2)}
         </button>
+        {qtyInCart > 0 && (
+          <div style={{ textAlign: "center", marginTop: 8, fontSize: 12.5, fontWeight: 700, color: "var(--fu-text-secondary)", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            <Check size={14} /> {qtyInCart} already in cart with this configuration
+          </div>
+        )}
       </div>
     </div>
   );

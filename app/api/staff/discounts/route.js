@@ -52,7 +52,7 @@ export async function POST(request) {
     if (maxRedemptions) {
       promoParams.metadata = { max_uses_per_customer: String(Number(maxRedemptions)) };
     }
-    const promotionCode = await getStripe().promotionCodes.create(promoParams, { expand: ["coupon"] });
+    const promotionCode = await getStripe().promotionCodes.create({ ...promoParams, expand: ["coupon"] });
 
     return NextResponse.json({ promotionCode });
   } catch (e) {

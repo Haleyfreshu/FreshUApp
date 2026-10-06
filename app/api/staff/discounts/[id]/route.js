@@ -10,7 +10,7 @@ export async function PATCH(request, { params }) {
 
   const { active } = await request.json();
   try {
-    const promotionCode = await getStripe().promotionCodes.update(params.id, { active: !!active }, { expand: ["coupon"] });
+    const promotionCode = await getStripe().promotionCodes.update(params.id, { active: !!active, expand: ["coupon"] });
     return NextResponse.json({ promotionCode });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 400 });

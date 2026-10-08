@@ -58,7 +58,8 @@ export function StaffLoginForm() {
         style={{ padding: 15, borderRadius: 14, border: "none", background: "var(--fu-cta-bg)", color: "var(--fu-cta-text)", fontWeight: 800, fontSize: 15, cursor: loading ? "default" : "pointer", opacity: loading ? 0.7 : 1 }}>
         {loading ? "Checking…" : "Enter"}
       </button>
-      <a href="/login" style={{ marginTop: 14, background: "none", border: "none", color: "var(--fu-text-muted)", fontSize: 12.5, cursor: "pointer", textDecoration: "none", textAlign: "center" }}>← Back to athlete login</a>
+      <a href="/forgot-password" style={{ marginTop: 14, background: "none", border: "none", color: "var(--fu-text-muted)", fontSize: 12.5, cursor: "pointer", textDecoration: "none", textAlign: "center" }}>Forgot password?</a>
+      <a href="/login" style={{ marginTop: 10, background: "none", border: "none", color: "var(--fu-text-muted)", fontSize: 12.5, cursor: "pointer", textDecoration: "none", textAlign: "center" }}>← Back to athlete login</a>
     </div>
   );
 }
